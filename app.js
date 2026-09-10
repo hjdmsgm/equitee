@@ -10,6 +10,7 @@ let origins = [];
 let destinations = [];
 let addMode = null;
 let counter = 0;
+let activePopupOverlay = null;
 
 const originChipsEl = document.getElementById('originChips');
 const destChipsEl = document.getElementById('destChips');
@@ -31,7 +32,15 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+function closeMapPopup() {
+  if (activePopupOverlay) {
+    activePopupOverlay.setMap(null);
+    activePopupOverlay = null;
+  }
+}
+
 function setAddMode(mode) {
+  closeMapPopup();
   addMode = mode;
   addOriginBtn.classList.toggle('active', mode === 'origin');
   addDestBtn.classList.toggle('active', mode === 'dest');
@@ -85,14 +94,60 @@ function addPoint(kind, name, lat, lng, fly) {
   renderResults();
 }
 
+function openMapPopup(kind, latlng) {
+  closeMapPopup();
+  const defaultName = kind === 'origin' ? '출발지 ' + (origins.length + 1) : '골프장 ' + (destinations.length + 1);
+  const label = kind === 'origin' ? '출발지 이름을 입력하세요' : '골프장 이름을 입력하세요';
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:relative; width:200px; padding:10px; background:#F4F2E9; border:1px solid rgba(20,35,26,0.32); box-shadow:0 4px 14px rgba(20,35,26,0.25); font-family:Pretendard,sans-serif;';
+  wrap.addEventListener('click', (e) => e.stopPropagation());
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '×';
+  closeBtn.setAttribute('aria-label', '닫기');
+  closeBtn.style.cssText = 'position:absolute; top:4px; right:6px; border:none; background:none; cursor:pointer; color:#5C6459; font-size:15px; line-height:1; padding:2px;';
+
+  const labelEl = document.createElement('div');
+  labelEl.textContent = label;
+  labelEl.style.cssText = 'font-size:11px; font-weight:600; color:#14231A; margin:0 18px 6px 0;';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = defaultName;
+  input.style.cssText = 'width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid rgba(20,35,26,0.32); background:#fff; font-size:12px; margin-bottom:6px; font-family:inherit;';
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.textContent = '이 위치에 추가';
+  confirmBtn.style.cssText = 'width:100%; padding:6px 8px; border:1px solid #14231A; background:#14231A; color:#F4F2E9; font-size:11.5px; font-weight:600; cursor:pointer;';
+
+  wrap.append(closeBtn, labelEl, input, confirmBtn);
+
+  function confirm() {
+    const name = input.value.trim() || defaultName;
+    addPoint(kind, name, latlng.getLat(), latlng.getLng(), false);
+    setAddMode(null);
+  }
+
+  confirmBtn.addEventListener('click', confirm);
+  closeBtn.addEventListener('click', () => setAddMode(null));
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirm(); });
+
+  activePopupOverlay = new kakao.maps.CustomOverlay({
+    position: latlng,
+    content: wrap,
+    xAnchor: 0.5,
+    yAnchor: 1.25,
+    zIndex: 999,
+    clickable: true
+  });
+  activePopupOverlay.setMap(map);
+  setTimeout(() => { input.focus(); input.select(); }, 0);
+}
+
 kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
   if (!addMode) return;
-  const defaultName = addMode === 'origin' ? '출발지 ' + (origins.length + 1) : '골프장 ' + (destinations.length + 1);
-  const name = window.prompt(addMode === 'origin' ? '출발지 이름을 입력하세요' : '골프장 이름을 입력하세요', defaultName);
-  if (name === null) { setAddMode(null); return; }
-  const latlng = mouseEvent.latLng;
-  addPoint(addMode, name || defaultName, latlng.getLat(), latlng.getLng(), false);
-  setAddMode(null);
+  openMapPopup(addMode, mouseEvent.latLng);
 });
 
 function renderSearchResults(kind, resultsEl, inputEl, hintEl, results) {
