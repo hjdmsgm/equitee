@@ -113,6 +113,10 @@ function renderSearchResults(kind, resultsEl, inputEl, hintEl, results) {
   });
 }
 
+function isGolfCourse(place) {
+  return (place.category_name || '').includes('골프');
+}
+
 function geocodeAndAdd(kind, query, inputEl, hintEl, goBtn, resultsEl) {
   const q = query.trim();
   resultsEl.innerHTML = '';
@@ -125,8 +129,11 @@ function geocodeAndAdd(kind, query, inputEl, hintEl, goBtn, resultsEl) {
       hintEl.textContent = '"' + q + '"의 검색 결과가 없습니다. 다르게 입력해보세요.';
       return;
     }
+    const results = kind === 'dest'
+      ? [...data].sort((a, b) => isGolfCourse(b) - isGolfCourse(a))
+      : data;
     hintEl.textContent = data.length + '개 결과 중에서 선택하세요.';
-    renderSearchResults(kind, resultsEl, inputEl, hintEl, data.slice(0, 8));
+    renderSearchResults(kind, resultsEl, inputEl, hintEl, results.slice(0, 8));
   });
 }
 
