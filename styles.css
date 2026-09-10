@@ -139,14 +139,22 @@ body {
 
 .hint { font-size: 10px; color: var(--muted); margin: 6px 0 0; line-height: 1.5; min-height: 14px; }
 
+.addr-search { position: relative; }
+
 .search-results {
-  margin-bottom: 7px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-top: 4px;
   border: 1px solid var(--line-strong);
   background: var(--paper);
   max-height: 220px;
   overflow-y: auto;
+  box-shadow: 0 6px 16px rgba(20,35,26,0.18);
 }
-.search-results:empty { display: none; border: none; margin-bottom: 0; }
+.search-results:empty { display: none; border: none; }
 
 .search-result-item {
   padding: 8px 10px;

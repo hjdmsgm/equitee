@@ -37,11 +37,13 @@
       <div class="panel-section">
         <h2 class="kr-head"><span class="swatch origin"></span>출발지</h2>
         <div class="chip-row" id="originChips"></div>
-        <div class="addr-row">
-          <input type="text" class="addr-input" id="originAddrInput" placeholder="주소 또는 지역명 입력">
-          <button class="addr-go" id="originAddrGo">검색</button>
+        <div class="addr-search">
+          <div class="addr-row">
+            <input type="text" class="addr-input" id="originAddrInput" placeholder="주소 또는 지역명 입력">
+            <button class="addr-go" id="originAddrGo">검색</button>
+          </div>
+          <div class="search-results" id="originSearchResults"></div>
         </div>
-        <div class="search-results" id="originSearchResults"></div>
         <button class="add-btn" id="addOriginBtn">+ 지도 클릭으로 추가</button>
         <p class="hint" id="originAddrHint"></p>
       </div>
@@ -49,11 +51,13 @@
       <div class="panel-section">
         <h2 class="kr-head"><span class="swatch dest"></span>목적지 (골프장)</h2>
         <div class="chip-row" id="destChips"></div>
-        <div class="addr-row">
-          <input type="text" class="addr-input" id="destAddrInput" placeholder="골프장 이름 또는 주소 입력">
-          <button class="addr-go" id="destAddrGo">검색</button>
+        <div class="addr-search">
+          <div class="addr-row">
+            <input type="text" class="addr-input" id="destAddrInput" placeholder="골프장 이름 또는 주소 입력">
+            <button class="addr-go" id="destAddrGo">검색</button>
+          </div>
+          <div class="search-results" id="destSearchResults"></div>
         </div>
-        <div class="search-results" id="destSearchResults"></div>
         <button class="add-btn" id="addDestBtn">+ 지도 클릭으로 추가</button>
         <p class="hint" id="destAddrHint"></p>
       </div>

@@ -96,30 +96,31 @@ function addPoint(kind, name, lat, lng, fly) {
 
 function openMapPopup(kind, latlng) {
   closeMapPopup();
+  map.panTo(latlng);
   const defaultName = kind === 'origin' ? '출발지 ' + (origins.length + 1) : '골프장 ' + (destinations.length + 1);
   const label = kind === 'origin' ? '출발지 이름을 입력하세요' : '골프장 이름을 입력하세요';
 
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:relative; width:200px; padding:10px; background:#F4F2E9; border:1px solid rgba(20,35,26,0.32); box-shadow:0 4px 14px rgba(20,35,26,0.25); font-family:Pretendard,sans-serif;';
+  wrap.style.cssText = 'box-sizing:border-box; position:relative; width:200px; padding:10px; background:#F4F2E9; border:1px solid rgba(20,35,26,0.32); box-shadow:0 4px 14px rgba(20,35,26,0.25); font-family:Pretendard,sans-serif;';
   wrap.addEventListener('click', (e) => e.stopPropagation());
 
   const closeBtn = document.createElement('button');
   closeBtn.textContent = '×';
   closeBtn.setAttribute('aria-label', '닫기');
-  closeBtn.style.cssText = 'position:absolute; top:4px; right:6px; border:none; background:none; cursor:pointer; color:#5C6459; font-size:15px; line-height:1; padding:2px;';
+  closeBtn.style.cssText = 'box-sizing:border-box; position:absolute; top:4px; right:6px; border:none; background:none; cursor:pointer; color:#5C6459; font-size:15px; line-height:1; padding:2px;';
 
   const labelEl = document.createElement('div');
   labelEl.textContent = label;
-  labelEl.style.cssText = 'font-size:11px; font-weight:600; color:#14231A; margin:0 18px 6px 0;';
+  labelEl.style.cssText = 'box-sizing:border-box; font-size:11px; font-weight:600; color:#14231A; margin:0 18px 6px 0;';
 
   const input = document.createElement('input');
   input.type = 'text';
   input.value = defaultName;
-  input.style.cssText = 'width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid rgba(20,35,26,0.32); background:#fff; font-size:12px; margin-bottom:6px; font-family:inherit;';
+  input.style.cssText = 'box-sizing:border-box; display:block; width:100%; padding:6px 8px; border:1px solid rgba(20,35,26,0.32); background:#fff; font-size:12px; margin-bottom:6px; font-family:inherit;';
 
   const confirmBtn = document.createElement('button');
   confirmBtn.textContent = '이 위치에 추가';
-  confirmBtn.style.cssText = 'width:100%; padding:6px 8px; border:1px solid #14231A; background:#14231A; color:#F4F2E9; font-size:11.5px; font-weight:600; cursor:pointer;';
+  confirmBtn.style.cssText = 'box-sizing:border-box; display:block; width:100%; padding:6px 8px; border:1px solid #14231A; background:#14231A; color:#F4F2E9; font-size:11.5px; font-weight:600; cursor:pointer;';
 
   wrap.append(closeBtn, labelEl, input, confirmBtn);
 
