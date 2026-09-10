@@ -158,6 +158,26 @@ body {
 .search-result-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
 .search-result-addr { font-size: 10.5px; color: var(--muted); }
 
+.panel-footer {
+  position: sticky;
+  bottom: 0;
+  width: calc(100% + 36px);
+  margin: 16px -18px -6px;
+  padding: 11px 18px;
+  border: none;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  font-family: 'Pretendard', sans-serif;
+}
+.panel-footer:hover { background: var(--moss-deep); }
+.panel-footer .mono { font-size: 11px; letter-spacing: 0.3px; color: rgba(244,242,233,0.85); }
+.panel-footer .cta { font-size: 11px; font-weight: 700; color: var(--flag); }
+
 .map-banner {
   position: absolute;
   bottom: 18px;
@@ -185,32 +205,6 @@ body {
   flex-direction: column;
 }
 .drawer.open { width: 380px; border-left-width: 1px; }
-
-.drawer-handle {
-  display: none;
-  position: fixed;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  z-index: 560;
-  background: var(--ink);
-  color: var(--paper);
-  border: none;
-  padding: 16px 7px;
-  font-size: 12px;
-  cursor: pointer;
-  writing-mode: vertical-rl;
-  letter-spacing: 1px;
-  transition: right 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.drawer-handle.shifted { right: 380px; }
-.drawer-handle .count {
-  display: block;
-  writing-mode: horizontal-tb;
-  margin-bottom: 4px;
-  font-family: 'IBM Plex Mono', monospace;
-  color: var(--flag);
-}
 
 .drawer-head {
   padding: 22px 22px 16px;
@@ -365,24 +359,6 @@ body {
   .drawer.open { transform: translateX(0); width: 100vw; }
 
   .drawer-head, .sort-group, .result-list { width: 100% !important; }
-
-  .drawer-handle {
-    top: auto;
-    right: auto;
-    left: 50%;
-    bottom: 22px;
-    transform: translateX(-50%);
-    writing-mode: horizontal-tb;
-    display: none;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 22px;
-    border-radius: 999px;
-    box-shadow: 0 4px 16px rgba(20,35,26,0.35);
-    transition: none;
-  }
-  .drawer-handle .count { display: inline; margin-bottom: 0; }
-  .drawer-handle.shifted { right: auto; }
 
   .drawer-close-mobile { display: flex; }
 }

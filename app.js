@@ -19,8 +19,8 @@ const mapBanner = document.getElementById('mapBanner');
 const resultArea = document.getElementById('resultArea');
 const resultSub = document.getElementById('resultSub');
 const drawer = document.getElementById('drawer');
-const drawerHandle = document.getElementById('drawerHandle');
-const drawerCount = document.getElementById('drawerCount');
+const panelFooter = document.getElementById('panelFooter');
+const panelFooterCounts = document.getElementById('panelFooterCounts');
 
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
@@ -42,24 +42,8 @@ function setAddMode(mode) {
 addOriginBtn.addEventListener('click', () => setAddMode(addMode === 'origin' ? null : 'origin'));
 addDestBtn.addEventListener('click', () => setAddMode(addMode === 'dest' ? null : 'dest'));
 
-function isMobile() {
-  return window.matchMedia('(max-width: 860px)').matches;
-}
-
-function hasAnyPoints() {
-  return origins.length > 0 || destinations.length > 0;
-}
-
-function updateHandleVisibility() {
-  if (!isMobile()) { drawerHandle.style.removeProperty('display'); return; }
-  const isOpen = drawer.classList.contains('open');
-  drawerHandle.style.display = (hasAnyPoints() && !isOpen) ? 'flex' : 'none';
-}
-
 function setDrawerOpen(open) {
   drawer.classList.toggle('open', open);
-  drawerHandle.classList.toggle('shifted', open);
-  updateHandleVisibility();
   let steps = 0;
   const iv = setInterval(() => {
     map.relayout();
@@ -68,14 +52,9 @@ function setDrawerOpen(open) {
   }, 32);
 }
 
-drawerHandle.addEventListener('click', () => setDrawerOpen(true));
+panelFooter.addEventListener('click', () => setDrawerOpen(true));
 
 document.getElementById('drawerCloseMobile').addEventListener('click', () => setDrawerOpen(false));
-
-window.addEventListener('resize', () => {
-  if (!isMobile()) setDrawerOpen(true);
-  else updateHandleVisibility();
-});
 
 function markerImage(color) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">`
@@ -212,11 +191,7 @@ drawer.addEventListener('transitionend', (e) => {
 });
 
 function renderResults() {
-  const readyCount = (origins.length > 0 && destinations.length > 0) ? destinations.length : 0;
-  drawerCount.textContent = readyCount;
-
-  if (!isMobile()) setDrawerOpen(true);
-  else updateHandleVisibility();
+  panelFooterCounts.textContent = `출발 ${origins.length} · 목적지 ${destinations.length}`;
 
   if (origins.length === 0 || destinations.length === 0) {
     resultSub.textContent = '직선거리(km) 기준';

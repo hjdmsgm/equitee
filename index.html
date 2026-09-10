@@ -57,26 +57,29 @@
         <button class="add-btn" id="addDestBtn">+ 지도 클릭으로 추가</button>
         <p class="hint" id="destAddrHint"></p>
       </div>
+
+      <button class="panel-footer kr-head" id="panelFooter">
+        <span class="mono" id="panelFooterCounts">출발 0 · 목적지 0</span>
+        <span class="cta">거리계산 준비됨 →</span>
+      </button>
     </div>
 
     <div class="map-banner kr-head" id="mapBanner" style="opacity:0;">지도를 클릭해 위치를 지정하세요</div>
   </div>
 
-  <button class="drawer-handle kr-head" id="drawerHandle">
-    <span class="count mono" id="drawerCount">0</span>결과
-  </button>
-
   <div class="drawer" id="drawer">
     <div class="drawer-head">
       <button class="drawer-close-mobile" id="drawerCloseMobile">← 지도로</button>
-      <svg width="118" height="42" viewBox="0 0 200 70" aria-hidden="true">
-        <line x1="100" y1="12" x2="100" y2="28" stroke="#14231A" stroke-width="2" stroke-linecap="round"/>
-        <path d="M100 12 L114 18 L100 24 Z" fill="#F0940D"/>
-        <text x="100" y="58" text-anchor="middle" style="font-size:34px;font-weight:700;fill:#14231A;letter-spacing:1.5px;font-family:'Pretendard',sans-serif;">어중간</text>
-      </svg>
-      <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px;">
-        <h2 class="kr-head" style="margin:0;font-size:14px;font-weight:600;">결과</h2>
-        <span class="meta mono" id="resultSub">직선거리(km) 기준</span>
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px;">
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px;">
+          <h2 class="kr-head" style="margin:0;font-size:14px;font-weight:600;">결과</h2>
+          <span class="meta mono" id="resultSub">직선거리(km) 기준</span>
+        </div>
+        <svg width="84" height="30" viewBox="0 0 200 70" aria-hidden="true" style="flex:none;">
+          <line x1="100" y1="12" x2="100" y2="28" stroke="#14231A" stroke-width="2" stroke-linecap="round"/>
+          <path d="M100 12 L114 18 L100 24 Z" fill="#F0940D"/>
+          <text x="100" y="58" text-anchor="middle" style="font-size:34px;font-weight:700;fill:#14231A;letter-spacing:1.5px;font-family:'Pretendard',sans-serif;">어중간</text>
+        </svg>
       </div>
     </div>
 
