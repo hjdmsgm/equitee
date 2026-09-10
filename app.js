@@ -21,6 +21,7 @@ const resultSub = document.getElementById('resultSub');
 const drawer = document.getElementById('drawer');
 const panelFooter = document.getElementById('panelFooter');
 const panelFooterCounts = document.getElementById('panelFooterCounts');
+const panelFooterCta = document.getElementById('panelFooterCta');
 
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
@@ -192,6 +193,9 @@ drawer.addEventListener('transitionend', (e) => {
 
 function renderResults() {
   panelFooterCounts.textContent = `출발 ${origins.length} · 목적지 ${destinations.length}`;
+  panelFooterCta.textContent = (origins.length === 0 || destinations.length === 0)
+    ? '출발지, 목적지를 선택해주세요'
+    : '거리계산 준비됨 →';
 
   if (origins.length === 0 || destinations.length === 0) {
     resultSub.textContent = '직선거리(km) 기준';
