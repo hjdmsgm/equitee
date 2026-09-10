@@ -215,60 +215,85 @@ body {
 .drawer-head h2 { margin: 0 0 2px; font-size: 18px; font-weight: 700; }
 .drawer-head .meta { font-size: 11.5px; color: var(--muted); }
 
-/* ---------- Fun sort-method cards ---------- */
+/* ---------- Compact sort-method pills ---------- */
 .sort-group {
-  padding: 16px 22px 18px;
+  padding: 14px 22px;
   border-bottom: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   flex: none;
   width: 379px;
 }
 
-.sort-card {
-  text-align: left;
+.sort-pills { display: flex; gap: 6px; }
+
+.sort-pill {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   background: var(--paper);
   border: 1px solid var(--line-strong);
-  padding: 11px 12px;
+  padding: 7px 6px;
   cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
   transition: border-color 0.15s ease, background 0.15s ease;
 }
-.sort-card:hover { border-color: var(--moss); }
-.sort-card.active { background: rgba(240,148,13,0.13); border-color: var(--flag); }
+.sort-pill:hover { border-color: var(--moss); }
+.sort-pill.active { background: rgba(240,148,13,0.13); border-color: var(--flag); }
+.sort-pill-icon { font-size: 13px; line-height: 1; flex: none; }
+.sort-pill-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.sort-card-top {
+.sort-why-toggle {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sort-why-toggle:hover { color: var(--ink); }
+.sort-why-chev { display: inline-block; font-size: 9px; transition: transform 0.15s ease; }
+.sort-why-toggle[aria-expanded="true"] .sort-why-chev { transform: rotate(180deg); }
+
+.sort-detail-wrap[hidden] { display: none; }
+
+.sort-detail { display: none; background: var(--paper); border: 1px solid var(--flag); padding: 11px 12px; }
+.sort-detail.active { display: block; }
+
+.sort-detail-top {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 5px;
 }
-.sort-card-icon { font-size: 16px; line-height: 1; }
-.sort-card-title { font-size: 13px; font-weight: 700; }
-.sort-card-check {
-  margin-left: auto;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10.5px;
-  color: var(--flag);
-  opacity: 0;
-}
-.sort-card.active .sort-card-check { opacity: 1; }
+.sort-detail-icon { font-size: 16px; line-height: 1; }
+.sort-detail-title { font-size: 13px; font-weight: 700; }
 
-.sort-card-desc {
+.sort-detail-desc {
   font-size: 11.5px;
   color: var(--muted);
   line-height: 1.55;
   margin-bottom: 6px;
 }
 
-.sort-card-example {
+.sort-detail-example {
   font-size: 10.5px;
   color: var(--ink);
   background: rgba(51,81,60,0.07);
   padding: 6px 8px;
   line-height: 1.5;
 }
-.sort-card-example b { color: var(--moss); }
+.sort-detail-example b { color: var(--moss); }
 
 .result-list {
   flex: 1;

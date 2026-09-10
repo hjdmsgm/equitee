@@ -240,13 +240,24 @@ function escapeHtml(str) {
 }
 
 let currentSort = 'fair';
-const sortCards = document.querySelectorAll('.sort-card');
-sortCards.forEach(card => {
-  card.addEventListener('click', () => {
-    currentSort = card.dataset.value;
-    sortCards.forEach(c => c.classList.toggle('active', c === card));
-    renderResults();
-  });
+const sortPills = document.querySelectorAll('.sort-pill');
+const sortDetails = document.querySelectorAll('.sort-detail');
+const sortWhyToggle = document.getElementById('sortWhyToggle');
+const sortDetailWrap = document.getElementById('sortDetailWrap');
+
+function setSort(value) {
+  currentSort = value;
+  sortPills.forEach(p => p.classList.toggle('active', p.dataset.value === value));
+  sortDetails.forEach(d => d.classList.toggle('active', d.dataset.value === value));
+  renderResults();
+}
+
+sortPills.forEach(pill => pill.addEventListener('click', () => setSort(pill.dataset.value)));
+
+sortWhyToggle.addEventListener('click', () => {
+  const expanded = sortWhyToggle.getAttribute('aria-expanded') === 'true';
+  sortWhyToggle.setAttribute('aria-expanded', String(!expanded));
+  sortDetailWrap.hidden = expanded;
 });
 
 drawer.addEventListener('transitionend', (e) => {
