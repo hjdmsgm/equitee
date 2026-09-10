@@ -162,17 +162,29 @@ function openMapPopup(kind, latlng) {
 }
 
 kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
+  originSearchResults.innerHTML = '';
+  destSearchResults.innerHTML = '';
   if (!addMode) return;
   openMapPopup(addMode, mouseEvent.latLng);
 });
 
 function renderSearchResults(kind, resultsEl, inputEl, hintEl, results) {
-  resultsEl.innerHTML = results.map((r, i) => `
+  const itemsHtml = results.map((r, i) => `
     <div class="search-result-item" data-idx="${i}">
       <div class="search-result-name">${escapeHtml(r.place_name)}</div>
       <div class="search-result-addr">${escapeHtml(r.road_address_name || r.address_name || '')}</div>
     </div>
   `).join('');
+  resultsEl.innerHTML = `
+    <div class="search-results-head">
+      <span class="search-results-count mono">${results.length}개 결과</span>
+      <button class="search-results-close" aria-label="검색결과 닫기">×</button>
+    </div>
+    ${itemsHtml}
+  `;
+  resultsEl.querySelector('.search-results-close').addEventListener('click', () => {
+    resultsEl.innerHTML = '';
+  });
   resultsEl.querySelectorAll('.search-result-item').forEach(el => {
     el.addEventListener('click', () => {
       const r = results[parseInt(el.dataset.idx, 10)];
