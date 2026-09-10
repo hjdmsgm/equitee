@@ -185,6 +185,7 @@ body {
 }
 .search-result-item:last-child { border-bottom: none; }
 .search-result-item:hover { background: rgba(51,81,60,0.09); }
+.search-result-item.active { background: rgba(240,148,13,0.15); }
 .search-result-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
 .search-result-addr { font-size: 10.5px; color: var(--muted); }
 

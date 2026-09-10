@@ -169,6 +169,7 @@ kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
 });
 
 function renderSearchResults(kind, resultsEl, inputEl, hintEl, results) {
+  resultsEl._selIndex = -1;
   const itemsHtml = results.map((r, i) => `
     <div class="search-result-item" data-idx="${i}">
       <div class="search-result-name">${escapeHtml(r.place_name)}</div>
@@ -194,6 +195,37 @@ function renderSearchResults(kind, resultsEl, inputEl, hintEl, results) {
       inputEl.value = '';
     });
   });
+}
+
+function moveSearchResultSelection(resultsEl, delta) {
+  const items = [...resultsEl.querySelectorAll('.search-result-item')];
+  if (items.length === 0) return;
+  const current = resultsEl._selIndex ?? -1;
+  const next = Math.max(0, Math.min(current + delta, items.length - 1));
+  resultsEl._selIndex = next;
+  items.forEach((el, i) => el.classList.toggle('active', i === next));
+  items[next].scrollIntoView({ block: 'nearest' });
+}
+
+function handleSearchResultsKeydown(e, resultsEl) {
+  const items = resultsEl.querySelectorAll('.search-result-item');
+  if (items.length === 0) return false;
+  if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+    e.preventDefault();
+    moveSearchResultSelection(resultsEl, 1);
+    return true;
+  }
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    moveSearchResultSelection(resultsEl, -1);
+    return true;
+  }
+  if (e.key === 'Enter' && resultsEl._selIndex >= 0) {
+    e.preventDefault();
+    items[resultsEl._selIndex].click();
+    return true;
+  }
+  return false;
 }
 
 function isGolfCourse(place) {
@@ -242,8 +274,14 @@ function submitDestAddr() {
 }
 originAddrGo.addEventListener('click', submitOriginAddr);
 destAddrGo.addEventListener('click', submitDestAddr);
-originAddrInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitOriginAddr(); });
-destAddrInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitDestAddr(); });
+originAddrInput.addEventListener('keydown', (e) => {
+  if (handleSearchResultsKeydown(e, originSearchResults)) return;
+  if (e.key === 'Enter') submitOriginAddr();
+});
+destAddrInput.addEventListener('keydown', (e) => {
+  if (handleSearchResultsKeydown(e, destSearchResults)) return;
+  if (e.key === 'Enter') submitDestAddr();
+});
 originAddrInput.addEventListener('input', () => {
   originSearchResults.innerHTML = '';
   clearTimeout(originSearchTimer);
