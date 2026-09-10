@@ -151,7 +151,9 @@ function openMapPopup(kind, latlng) {
     if (input.value !== loadingText) return;
     if (status === kakao.maps.services.Status.OK && result[0]) {
       const r = result[0];
-      input.value = (r.road_address && r.road_address.address_name) || (r.address && r.address.address_name) || fallbackName;
+      const buildingName = r.road_address && r.road_address.building_name;
+      const addr = (r.road_address && r.road_address.address_name) || (r.address && r.address.address_name) || fallbackName;
+      input.value = buildingName || addr;
     } else {
       input.value = fallbackName;
     }
