@@ -97,8 +97,9 @@ function addPoint(kind, name, lat, lng, fly) {
 function openMapPopup(kind, latlng) {
   closeMapPopup();
   map.panTo(latlng);
-  const defaultName = kind === 'origin' ? '출발지 ' + (origins.length + 1) : '골프장 ' + (destinations.length + 1);
+  const fallbackName = kind === 'origin' ? '출발지 ' + (origins.length + 1) : '골프장 ' + (destinations.length + 1);
   const label = kind === 'origin' ? '출발지 이름을 입력하세요' : '골프장 이름을 입력하세요';
+  const loadingText = '주소 확인 중...';
 
   const wrap = document.createElement('div');
   wrap.style.cssText = 'box-sizing:border-box; position:relative; width:200px; padding:10px; background:#F4F2E9; border:1px solid rgba(20,35,26,0.32); box-shadow:0 4px 14px rgba(20,35,26,0.25); font-family:Pretendard,sans-serif;';
@@ -115,7 +116,7 @@ function openMapPopup(kind, latlng) {
 
   const input = document.createElement('input');
   input.type = 'text';
-  input.value = defaultName;
+  input.value = loadingText;
   input.style.cssText = 'box-sizing:border-box; display:block; width:100%; padding:6px 8px; border:1px solid rgba(20,35,26,0.32); background:#fff; font-size:12px; margin-bottom:6px; font-family:inherit;';
 
   const confirmBtn = document.createElement('button');
@@ -125,7 +126,8 @@ function openMapPopup(kind, latlng) {
   wrap.append(closeBtn, labelEl, input, confirmBtn);
 
   function confirm() {
-    const name = input.value.trim() || defaultName;
+    const raw = input.value.trim();
+    const name = (!raw || raw === loadingText) ? fallbackName : raw;
     addPoint(kind, name, latlng.getLat(), latlng.getLng(), false);
     setAddMode(null);
   }
@@ -144,6 +146,17 @@ function openMapPopup(kind, latlng) {
   });
   activePopupOverlay.setMap(map);
   setTimeout(() => { input.focus(); input.select(); }, 0);
+
+  geocoder.coord2Address(latlng.getLng(), latlng.getLat(), (result, status) => {
+    if (input.value !== loadingText) return;
+    if (status === kakao.maps.services.Status.OK && result[0]) {
+      const r = result[0];
+      input.value = (r.road_address && r.road_address.address_name) || (r.address && r.address.address_name) || fallbackName;
+    } else {
+      input.value = fallbackName;
+    }
+    input.select();
+  });
 }
 
 kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
