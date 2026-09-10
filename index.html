@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>어중간</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=39bb93dd1b198baa81525f94e2cd1644&libraries=services"></script>
+<style>
+  :root {
+    --ink: #14231A;
+    --moss: #1E7A46;
+    --moss-deep: #223A2A;
+    --hazard: #1476A6;
+    --flag: #F0940D;
+    --paper: #F4F2E9;
+    --paper-dim: #E9E5D7;
+    --line: rgba(20,35,26,0.14);
+    --line-strong: rgba(20,35,26,0.32);
+    --muted: #5C6459;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+
+  body {
+    font-family: 'Pretendard', sans-serif;
+    color: var(--ink);
+  }
+
+  .kr-head { font-family: 'Pretendard', sans-serif; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  /* ---------- App layout: map resizes when drawer opens ---------- */
+  .app {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  .map-col {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+  }
+
+  #map {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    filter: saturate(0.85) contrast(1.02);
+  }
+
+  /* ---------- Panel header (wordmark merged in) ---------- */
+  .panel-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: -18px -18px 16px;
+    padding: 14px 18px;
+    background: var(--ink);
+    color: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .panel-head h1 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+  .panel-head .tag { font-size: 10px; color: rgba(244,242,233,0.6); }
+
+  /* ---------- Left input panel ---------- */
+  .panel {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    width: 292px;
+    max-height: calc(100% - 40px);
+    overflow-y: auto;
+    background: rgba(244,242,233,0.97);
+    border: 1px solid var(--line-strong);
+    padding: 18px 18px 6px;
+    z-index: 500;
+  }
+
+  .panel-section { margin-bottom: 18px; }
+
+  .panel-section h2 {
+    font-size: 11.5px;
+    font-weight: 600;
+    margin: 0 0 9px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ink);
+  }
+
+  .swatch { width: 8px; height: 8px; flex: none; }
+  .swatch.origin { background: var(--hazard); }
+  .swatch.dest { background: var(--moss); }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .chip-row:empty { margin-bottom: 0; }
+
+  .chip {
+    font-size: 12px;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    padding: 4px 6px 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .chip button { border: none; background: none; cursor: pointer; color: var(--muted); font-size: 13px; padding: 1px 3px; }
+  .chip button:hover { color: var(--ink); }
+
+  .addr-row { display: flex; gap: 6px; margin-bottom: 7px; }
+  .addr-input {
+    flex: 1; min-width: 0;
+    padding: 7px 9px;
+    border: 1px solid var(--line-strong);
+    background: var(--paper);
+    font-family: 'Pretendard', sans-serif;
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .addr-input:focus { outline: none; border-color: var(--moss); }
+  .addr-go {
+    flex: none; padding: 7px 11px;
+    border: 1px solid var(--ink);
+    background: var(--ink); color: var(--paper);
+    font-size: 12px; cursor: pointer;
+  }
+  .addr-go:hover { background: var(--moss); border-color: var(--moss); }
+  .addr-go:disabled { opacity: 0.5; cursor: default; }
+
+  .add-btn {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px dashed var(--line-strong);
+    background: transparent;
+    font-size: 12px;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+  }
+  .add-btn:hover { background: rgba(51,81,60,0.07); border-color: var(--moss); }
+  .add-btn.active { background: var(--moss); border-style: solid; border-color: var(--moss); color: var(--paper); }
+
+  .hint { font-size: 10px; color: var(--muted); margin: 6px 0 0; line-height: 1.5; min-height: 14px; }
+
+  .map-banner {
+    position: absolute;
+    bottom: 18px;
+    left: 18px;
+    z-index: 500;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 11px;
+    padding: 6px 12px;
+    border: 1px solid rgba(244,242,233,0.2);
+    transition: opacity 0.2s ease;
+  }
+
+  /* ---------- Right results drawer (map resizes to make room) ---------- */
+  .drawer {
+    flex: 0 0 auto;
+    width: 0;
+    height: 100%;
+    background: var(--paper);
+    border-left: 0px solid var(--line-strong);
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    display: flex;
+    flex-direction: column;
+  }
+  .drawer.open { width: 380px; border-left-width: 1px; }
+
+  .drawer-handle {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    z-index: 560;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 16px 7px;
+    font-size: 12px;
+    cursor: pointer;
+    writing-mode: vertical-rl;
+    letter-spacing: 1px;
+    transition: right 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .drawer-handle.shifted { right: 380px; }
+  .drawer-handle .count {
+    display: block;
+    writing-mode: horizontal-tb;
+    margin-bottom: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--flag);
+  }
+
+  .drawer-head {
+    padding: 22px 22px 16px;
+    border-bottom: 1px solid var(--line);
+    flex: none;
+    width: 379px;
+  }
+  .drawer-head h2 { margin: 0 0 2px; font-size: 18px; font-weight: 700; }
+  .drawer-head .meta { font-size: 11.5px; color: var(--muted); }
+
+  /* ---------- Fun sort-method cards ---------- */
+  .sort-group {
+    padding: 16px 22px 18px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: none;
+    width: 379px;
+  }
+
+  .sort-card {
+    text-align: left;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    padding: 11px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .sort-card:hover { border-color: var(--moss); }
+  .sort-card.active { background: rgba(240,148,13,0.13); border-color: var(--flag); }
+
+  .sort-card-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+  .sort-card-icon { font-size: 16px; line-height: 1; }
+  .sort-card-title { font-size: 13px; font-weight: 700; }
+  .sort-card-check {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--flag);
+    opacity: 0;
+  }
+  .sort-card.active .sort-card-check { opacity: 1; }
+
+  .sort-card-desc {
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.55;
+    margin-bottom: 6px;
+  }
+
+  .sort-card-example {
+    font-size: 10.5px;
+    color: var(--ink);
+    background: rgba(51,81,60,0.07);
+    padding: 6px 8px;
+    line-height: 1.5;
+  }
+  .sort-card-example b { color: var(--moss); }
+
+  .result-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0 24px;
+    width: 379px;
+  }
+
+  .empty-state {
+    padding: 28px 22px;
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.7;
+  }
+
+  .result-card {
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    gap: 12px;
+  }
+  .result-card:hover { background: rgba(51,81,60,0.045); }
+
+  .result-rank {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--paper);
+    background: var(--moss);
+    width: 22px; height: 22px;
+    flex: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .result-body { flex: 1; min-width: 0; }
+  .result-name { font-weight: 600; font-size: 13.5px; margin-bottom: 6px; }
+
+  .result-dists {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 10px;
+    margin-bottom: 6px;
+  }
+  .result-dists span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .result-dists b { color: var(--ink); font-weight: 600; }
+
+  .result-metric {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(240,148,13,0.18);
+    padding: 2px 7px;
+  }
+
+  @media (max-width: 860px) {
+    .panel { width: calc(100vw - 36px); max-height: 46vh; }
+
+    .drawer {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      flex: none;
+      transform: translateX(100%);
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 900;
+      border-left: none;
+    }
+    .drawer.open { transform: translateX(0); width: 100vw; }
+
+    .drawer-head, .sort-group, .result-list { width: 100% !important; }
+
+    .drawer-handle { display: none; }
+
+    .drawer-close-mobile { display: flex; }
+  }
+
+  .drawer-close-mobile {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 7px 12px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="map-col">
+    <div id="map"></div>
+
+    <div class="panel">
+      <div class="panel-head kr-head">
+        <svg width="20" height="20" viewBox="0 0 60 60" aria-hidden="true">
+          <line x1="12" y1="20" x2="30" y2="34" stroke="#1E7A46" stroke-width="2" stroke-dasharray="3 3"/>
+          <line x1="48" y1="20" x2="30" y2="34" stroke="#1476A6" stroke-width="2" stroke-dasharray="3 3"/>
+          <line x1="30" y1="54" x2="30" y2="34" stroke="#F0940D" stroke-width="2" stroke-dasharray="3 3"/>
+          <circle cx="12" cy="20" r="4" fill="#1E7A46"/>
+          <circle cx="48" cy="20" r="4" fill="#1476A6"/>
+          <circle cx="30" cy="54" r="4" fill="#F0940D"/>
+          <line x1="30" y1="34" x2="30" y2="10" stroke="#F4F2E9" stroke-width="3" stroke-linecap="round"/>
+          <path d="M30 10 L44 16 L30 22 Z" fill="#F0940D"/>
+          <circle cx="30" cy="34" r="3.5" fill="#F4F2E9"/>
+        </svg>
+        <h1>어중간</h1>
+        <span class="tag">다 같이 모이기 딱 좋은 지점</span>
+      </div>
+
+      <div class="panel-section">
+        <h2 class="kr-head"><span class="swatch origin"></span>출발지</h2>
+        <div class="chip-row" id="originChips"></div>
+        <div class="addr-row">
+          <input type="text" class="addr-input" id="originAddrInput" placeholder="주소 또는 지역명 입력">
+          <button class="addr-go" id="originAddrGo">추가</button>
+        </div>
+        <button class="add-btn" id="addOriginBtn">+ 지도 클릭으로 추가</button>
+        <p class="hint" id="originAddrHint"></p>
+      </div>
+
+      <div class="panel-section">
+        <h2 class="kr-head"><span class="swatch dest"></span>목적지 (골프장)</h2>
+        <div class="chip-row" id="destChips"></div>
+        <div class="addr-row">
+          <input type="text" class="addr-input" id="destAddrInput" placeholder="골프장 이름 또는 주소 입력">
+          <button class="addr-go" id="destAddrGo">추가</button>
+        </div>
+        <button class="add-btn" id="addDestBtn">+ 지도 클릭으로 추가</button>
+        <p class="hint" id="destAddrHint"></p>
+      </div>
+    </div>
+
+    <div class="map-banner kr-head" id="mapBanner" style="opacity:0;">지도를 클릭해 위치를 지정하세요</div>
+  </div>
+
+  <button class="drawer-handle kr-head" id="drawerHandle">
+    <span class="count mono" id="drawerCount">0</span>결과
+  </button>
+
+  <div class="drawer" id="drawer">
+    <div class="drawer-head">
+      <button class="drawer-close-mobile" id="drawerCloseMobile">← 지도로</button>
+      <svg width="118" height="42" viewBox="0 0 200 70" aria-hidden="true">
+        <line x1="100" y1="12" x2="100" y2="28" stroke="#14231A" stroke-width="2" stroke-linecap="round"/>
+        <path d="M100 12 L114 18 L100 24 Z" fill="#F0940D"/>
+        <text x="100" y="58" text-anchor="middle" style="font-size:34px;font-weight:700;fill:#14231A;letter-spacing:1.5px;font-family:'Pretendard',sans-serif;">어중간</text>
+      </svg>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px;">
+        <h2 class="kr-head" style="margin:0;font-size:14px;font-weight:600;">결과</h2>
+        <span class="meta mono" id="resultSub">직선거리(km) 기준</span>
+      </div>
+    </div>
+
+    <div class="sort-group" id="sortGroup">
+      <button class="sort-card active kr-head" data-value="fair">
+        <div class="sort-card-top">
+          <span class="sort-card-icon">⚖️</span>
+          <span class="sort-card-title">다 같이 억울하지 않게</span>
+          <span class="sort-card-check">선택됨</span>
+        </div>
+        <div class="sort-card-desc">제일 가까운 사람과 제일 먼 사람의 거리 차이(편차)가 작은 곳부터 보여줘요. "왜 나만 멀리 가야 해?"를 막아주는 기준.</div>
+        <div class="sort-card-example">예: 편차 <b>2km</b>인 곳과 편차 <b>15km</b>인 곳이 있다면, 평균이 비슷해도 2km 쪽을 더 위로 올려줘요.</div>
+      </button>
+
+      <button class="sort-card kr-head" data-value="avg">
+        <div class="sort-card-top">
+          <span class="sort-card-icon">🎯</span>
+          <span class="sort-card-title">총 이동거리 최소화</span>
+          <span class="sort-card-check">선택됨</span>
+        </div>
+        <div class="sort-card-desc">모든 출발지로부터의 평균 거리가 가장 짧은 곳부터 보여줘요. 다만 한 명만 유독 멀어도 평균만 낮으면 상위권일 수 있어요.</div>
+        <div class="sort-card-example">예: 3명 중 2명은 5분 거리, 1명만 1시간이어도 평균이 낮으면 이 기준에서는 상위권일 수 있어요.</div>
+      </button>
+
+      <button class="sort-card kr-head" data-value="worst">
+        <div class="sort-card-top">
+          <span class="sort-card-icon">🛡️</span>
+          <span class="sort-card-title">제일 고생하는 사람 기준</span>
+          <span class="sort-card-check">선택됨</span>
+        </div>
+        <div class="sort-card-desc">가장 멀리서 와야 하는 사람의 거리 자체를 최소화해요. "그래도 아무도 너무 고생하지는 않게"가 목표.</div>
+        <div class="sort-card-example">예: 평균은 조금 높아도, 제일 먼 사람의 거리가 가장 짧다면 이 기준에서는 1위예요.</div>
+      </button>
+    </div>
+
+    <div class="result-list" id="resultArea">
+      <div class="empty-state">아직 출발지와 목적지가 등록되지 않았습니다. 왼쪽 패널에서 위치를 추가하면 이곳에 결과가 표시됩니다.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const map = new kakao.maps.Map(document.getElementById('map'), {
+    center: new kakao.maps.LatLng(37.5665, 126.9780),
+    level: 8
+  });
+  map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
+  const geocoder = new kakao.maps.services.Geocoder();
+  const places = new kakao.maps.services.Places();
+
+  let origins = [];
+  let destinations = [];
+  let addMode = null;
+  let counter = 0;
+  let drawerManuallyClosed = false;
+
+  const originChipsEl = document.getElementById('originChips');
+  const destChipsEl = document.getElementById('destChips');
+  const addOriginBtn = document.getElementById('addOriginBtn');
+  const addDestBtn = document.getElementById('addDestBtn');
+  const mapBanner = document.getElementById('mapBanner');
+  const resultArea = document.getElementById('resultArea');
+  const resultSub = document.getElementById('resultSub');
+  const drawer = document.getElementById('drawer');
+  const drawerHandle = document.getElementById('drawerHandle');
+  const drawerCount = document.getElementById('drawerCount');
+
+  function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function setAddMode(mode) {
+    addMode = mode;
+    addOriginBtn.classList.toggle('active', mode === 'origin');
+    addDestBtn.classList.toggle('active', mode === 'dest');
+    if (mode === 'origin') { mapBanner.textContent = '지도를 클릭해 출발지 위치를 지정하세요'; mapBanner.style.opacity = 1; }
+    else if (mode === 'dest') { mapBanner.textContent = '지도를 클릭해 골프장 위치를 지정하세요'; mapBanner.style.opacity = 1; }
+    else { mapBanner.style.opacity = 0; }
+  }
+
+  addOriginBtn.addEventListener('click', () => setAddMode(addMode === 'origin' ? null : 'origin'));
+  addDestBtn.addEventListener('click', () => setAddMode(addMode === 'dest' ? null : 'dest'));
+
+  function setDrawerOpen(open) {
+    drawer.classList.toggle('open', open);
+    drawerHandle.classList.toggle('shifted', open);
+    let steps = 0;
+    const iv = setInterval(() => {
+      map.relayout();
+      steps++;
+      if (steps > 10) clearInterval(iv);
+    }, 32);
+  }
+
+  drawerHandle.addEventListener('click', () => {
+    const willOpen = !drawer.classList.contains('open');
+    drawerManuallyClosed = !willOpen;
+    setDrawerOpen(willOpen);
+  });
+
+  document.getElementById('drawerCloseMobile').addEventListener('click', () => {
+    drawerManuallyClosed = true;
+    setDrawerOpen(false);
+  });
+
+  function markerImage(color) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">`
+      + `<rect x="3" y="3" width="14" height="14" fill="${color}" stroke="#F4F2E9" stroke-width="2" transform="rotate(45 10 10)"/></svg>`;
+    const url = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+    return new kakao.maps.MarkerImage(url, new kakao.maps.Size(20, 20), { offset: new kakao.maps.Point(10, 10) });
+  }
+
+  function addPoint(kind, name, lat, lng, fly) {
+    const id = 'p' + (counter++);
+    const color = kind === 'origin' ? '#1476A6' : '#1E7A46';
+    const latlng = new kakao.maps.LatLng(lat, lng);
+    const marker = new kakao.maps.Marker({
+      position: latlng,
+      image: markerImage(color),
+      map
+    });
+    const infowindow = new kakao.maps.InfoWindow({ content: `<div style="padding:4px 8px;font-size:12px;">${escapeHtml(name)}</div>` });
+    kakao.maps.event.addListener(marker, 'click', () => infowindow.open(map, marker));
+    const point = { id, name, lat, lng, marker };
+    if (kind === 'origin') origins.push(point); else destinations.push(point);
+    if (fly) {
+      map.setLevel(Math.min(map.getLevel(), 5));
+      map.panTo(latlng);
+    }
+    renderChips();
+    renderResults();
+  }
+
+  kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
+    if (!addMode) return;
+    const defaultName = addMode === 'origin' ? '출발지 ' + (origins.length + 1) : '골프장 ' + (destinations.length + 1);
+    const name = window.prompt(addMode === 'origin' ? '출발지 이름을 입력하세요' : '골프장 이름을 입력하세요', defaultName);
+    if (name === null) { setAddMode(null); return; }
+    const latlng = mouseEvent.latLng;
+    addPoint(addMode, name || defaultName, latlng.getLat(), latlng.getLng(), false);
+    setAddMode(null);
+  });
+
+  function geocodeAndAdd(kind, query, hintEl, goBtn) {
+    const q = query.trim();
+    if (!q) return;
+    goBtn.disabled = true;
+    hintEl.textContent = '주소 찾는 중...';
+    places.keywordSearch(q, (data, status) => {
+      goBtn.disabled = false;
+      if (status !== kakao.maps.services.Status.OK || !data || data.length === 0) {
+        hintEl.textContent = '"' + q + '"의 위치를 찾지 못했습니다. 더 구체적으로 입력해보세요.';
+        return;
+      }
+      const result = data[0];
+      addPoint(kind, result.place_name || q, parseFloat(result.y), parseFloat(result.x), true);
+      hintEl.textContent = '등록됨: ' + (result.place_name || q);
+    });
+  }
+
+  const originAddrInput = document.getElementById('originAddrInput');
+  const originAddrGo = document.getElementById('originAddrGo');
+  const originAddrHint = document.getElementById('originAddrHint');
+  const destAddrInput = document.getElementById('destAddrInput');
+  const destAddrGo = document.getElementById('destAddrGo');
+  const destAddrHint = document.getElementById('destAddrHint');
+
+  function submitOriginAddr() {
+    geocodeAndAdd('origin', originAddrInput.value, originAddrHint, originAddrGo);
+    originAddrInput.value = '';
+  }
+  function submitDestAddr() {
+    geocodeAndAdd('dest', destAddrInput.value, destAddrHint, destAddrGo);
+    destAddrInput.value = '';
+  }
+  originAddrGo.addEventListener('click', submitOriginAddr);
+  destAddrGo.addEventListener('click', submitDestAddr);
+  originAddrInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitOriginAddr(); });
+  destAddrInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitDestAddr(); });
+
+  function removePoint(id, listName) {
+    const list = listName === 'origin' ? origins : destinations;
+    const idx = list.findIndex(p => p.id === id);
+    if (idx === -1) return;
+    list[idx].marker.setMap(null);
+    list.splice(idx, 1);
+    renderChips();
+    renderResults();
+  }
+
+  function renderChips() {
+    originChipsEl.innerHTML = origins.map(chipHtml).join('');
+    destChipsEl.innerHTML = destinations.map(chipHtml).join('');
+    originChipsEl.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => removePoint(btn.dataset.id, 'origin')));
+    destChipsEl.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => removePoint(btn.dataset.id, 'dest')));
+  }
+
+  function chipHtml(p) {
+    return `<span class="chip">${escapeHtml(p.name)}<button data-id="${p.id}" aria-label="삭제">×</button></span>`;
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  }
+
+  let currentSort = 'fair';
+  const sortCards = document.querySelectorAll('.sort-card');
+  sortCards.forEach(card => {
+    card.addEventListener('click', () => {
+      currentSort = card.dataset.value;
+      sortCards.forEach(c => c.classList.toggle('active', c === card));
+      renderResults();
+    });
+  });
+
+  drawer.addEventListener('transitionend', (e) => {
+    if (e.propertyName === 'width') map.relayout();
+  });
+
+  function renderResults() {
+    const readyCount = (origins.length > 0 && destinations.length > 0) ? destinations.length : 0;
+    drawerCount.textContent = readyCount;
+
+    if (readyCount > 0 && !drawerManuallyClosed) setDrawerOpen(true);
+    if (readyCount === 0) setDrawerOpen(false);
+
+    if (origins.length === 0 || destinations.length === 0) {
+      resultSub.textContent = '직선거리(km) 기준';
+      resultArea.innerHTML = `<div class="empty-state">아직 ${origins.length === 0 ? '출발지가' : '목적지가'} 등록되지 않았습니다. 왼쪽 패널에서 위치를 추가하면 이곳에 결과가 표시됩니다.</div>`;
+      return;
+    }
+
+    const rows = destinations.map(dest => {
+      const dists = origins.map(o => ({ name: o.name, km: haversine(o.lat, o.lng, dest.lat, dest.lng) }));
+      const values = dists.map(d => d.km);
+      const avg = values.reduce((a,b) => a+b, 0) / values.length;
+      const max = Math.max(...values);
+      const min = Math.min(...values);
+      const spread = max - min;
+      return { dest, dists, avg, max, spread };
+    });
+
+    const sortKey = currentSort;
+    const sorted = [...rows].sort((a, b) => {
+      if (sortKey === 'fair') return a.spread - b.spread;
+      if (sortKey === 'avg') return a.avg - b.avg;
+      return a.max - b.max;
+    });
+
+    const metricLabel = sortKey === 'fair' ? '편차' : sortKey === 'avg' ? '평균' : '최대';
+    resultSub.textContent = `골프장 ${destinations.length} · 출발지 ${origins.length} · 직선거리(km)`;
+
+    resultArea.innerHTML = sorted.map((row, i) => {
+      const metricVal = sortKey === 'fair' ? row.spread : sortKey === 'avg' ? row.avg : row.max;
+      const distSpans = row.dists.map(d => `<span>${escapeHtml(d.name)} <b>${d.km.toFixed(1)}km</b></span>`).join('');
+      return `<div class="result-card">
+        <div class="result-rank mono">${i+1}</div>
+        <div class="result-body">
+          <div class="result-name">${escapeHtml(row.dest.name)}</div>
+          <div class="result-dists">${distSpans}</div>
+          <span class="result-metric">${metricLabel} ${metricVal.toFixed(1)}km</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  renderChips();
+  renderResults();
+</script>
+
+</body>
+</html>
