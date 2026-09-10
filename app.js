@@ -201,18 +201,33 @@ const destAddrGo = document.getElementById('destAddrGo');
 const destAddrHint = document.getElementById('destAddrHint');
 const destSearchResults = document.getElementById('destSearchResults');
 
+let originSearchTimer = null;
+let destSearchTimer = null;
+
 function submitOriginAddr() {
+  clearTimeout(originSearchTimer);
   geocodeAndAdd('origin', originAddrInput.value, originAddrInput, originAddrHint, originAddrGo, originSearchResults);
 }
 function submitDestAddr() {
+  clearTimeout(destSearchTimer);
   geocodeAndAdd('dest', destAddrInput.value, destAddrInput, destAddrHint, destAddrGo, destSearchResults);
 }
 originAddrGo.addEventListener('click', submitOriginAddr);
 destAddrGo.addEventListener('click', submitDestAddr);
 originAddrInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitOriginAddr(); });
 destAddrInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitDestAddr(); });
-originAddrInput.addEventListener('input', () => { originSearchResults.innerHTML = ''; });
-destAddrInput.addEventListener('input', () => { destSearchResults.innerHTML = ''; });
+originAddrInput.addEventListener('input', () => {
+  originSearchResults.innerHTML = '';
+  clearTimeout(originSearchTimer);
+  if (!originAddrInput.value.trim()) { originAddrHint.textContent = ''; return; }
+  originSearchTimer = setTimeout(submitOriginAddr, 350);
+});
+destAddrInput.addEventListener('input', () => {
+  destSearchResults.innerHTML = '';
+  clearTimeout(destSearchTimer);
+  if (!destAddrInput.value.trim()) { destAddrHint.textContent = ''; return; }
+  destSearchTimer = setTimeout(submitDestAddr, 350);
+});
 
 function removePoint(id, listName) {
   const list = listName === 'origin' ? origins : destinations;
