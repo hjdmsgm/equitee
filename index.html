@@ -151,6 +151,25 @@
 
   .hint { font-size: 10px; color: var(--muted); margin: 6px 0 0; line-height: 1.5; min-height: 14px; }
 
+  .search-results {
+    margin-bottom: 7px;
+    border: 1px solid var(--line-strong);
+    background: var(--paper);
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .search-results:empty { display: none; border: none; margin-bottom: 0; }
+
+  .search-result-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line);
+  }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: rgba(51,81,60,0.09); }
+  .search-result-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .search-result-addr { font-size: 10.5px; color: var(--muted); }
+
   .map-banner {
     position: absolute;
     bottom: 18px;
@@ -392,8 +411,9 @@
         <div class="chip-row" id="originChips"></div>
         <div class="addr-row">
           <input type="text" class="addr-input" id="originAddrInput" placeholder="주소 또는 지역명 입력">
-          <button class="addr-go" id="originAddrGo">추가</button>
+          <button class="addr-go" id="originAddrGo">검색</button>
         </div>
+        <div class="search-results" id="originSearchResults"></div>
         <button class="add-btn" id="addOriginBtn">+ 지도 클릭으로 추가</button>
         <p class="hint" id="originAddrHint"></p>
       </div>
@@ -403,8 +423,9 @@
         <div class="chip-row" id="destChips"></div>
         <div class="addr-row">
           <input type="text" class="addr-input" id="destAddrInput" placeholder="골프장 이름 또는 주소 입력">
-          <button class="addr-go" id="destAddrGo">추가</button>
+          <button class="addr-go" id="destAddrGo">검색</button>
         </div>
+        <div class="search-results" id="destSearchResults"></div>
         <button class="add-btn" id="addDestBtn">+ 지도 클릭으로 추가</button>
         <p class="hint" id="destAddrHint"></p>
       </div>
@@ -575,42 +596,62 @@
     setAddMode(null);
   });
 
-  function geocodeAndAdd(kind, query, hintEl, goBtn) {
+  function renderSearchResults(kind, resultsEl, inputEl, hintEl, results) {
+    resultsEl.innerHTML = results.map((r, i) => `
+      <div class="search-result-item" data-idx="${i}">
+        <div class="search-result-name">${escapeHtml(r.place_name)}</div>
+        <div class="search-result-addr">${escapeHtml(r.road_address_name || r.address_name || '')}</div>
+      </div>
+    `).join('');
+    resultsEl.querySelectorAll('.search-result-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const r = results[parseInt(el.dataset.idx, 10)];
+        addPoint(kind, r.place_name, parseFloat(r.y), parseFloat(r.x), true);
+        hintEl.textContent = '등록됨: ' + r.place_name;
+        resultsEl.innerHTML = '';
+        inputEl.value = '';
+      });
+    });
+  }
+
+  function geocodeAndAdd(kind, query, inputEl, hintEl, goBtn, resultsEl) {
     const q = query.trim();
+    resultsEl.innerHTML = '';
     if (!q) return;
     goBtn.disabled = true;
-    hintEl.textContent = '주소 찾는 중...';
+    hintEl.textContent = '검색 중...';
     places.keywordSearch(q, (data, status) => {
       goBtn.disabled = false;
       if (status !== kakao.maps.services.Status.OK || !data || data.length === 0) {
-        hintEl.textContent = '"' + q + '"의 위치를 찾지 못했습니다. 더 구체적으로 입력해보세요.';
+        hintEl.textContent = '"' + q + '"의 검색 결과가 없습니다. 다르게 입력해보세요.';
         return;
       }
-      const result = data[0];
-      addPoint(kind, result.place_name || q, parseFloat(result.y), parseFloat(result.x), true);
-      hintEl.textContent = '등록됨: ' + (result.place_name || q);
+      hintEl.textContent = data.length + '개 결과 중에서 선택하세요.';
+      renderSearchResults(kind, resultsEl, inputEl, hintEl, data.slice(0, 8));
     });
   }
 
   const originAddrInput = document.getElementById('originAddrInput');
   const originAddrGo = document.getElementById('originAddrGo');
   const originAddrHint = document.getElementById('originAddrHint');
+  const originSearchResults = document.getElementById('originSearchResults');
   const destAddrInput = document.getElementById('destAddrInput');
   const destAddrGo = document.getElementById('destAddrGo');
   const destAddrHint = document.getElementById('destAddrHint');
+  const destSearchResults = document.getElementById('destSearchResults');
 
   function submitOriginAddr() {
-    geocodeAndAdd('origin', originAddrInput.value, originAddrHint, originAddrGo);
-    originAddrInput.value = '';
+    geocodeAndAdd('origin', originAddrInput.value, originAddrInput, originAddrHint, originAddrGo, originSearchResults);
   }
   function submitDestAddr() {
-    geocodeAndAdd('dest', destAddrInput.value, destAddrHint, destAddrGo);
-    destAddrInput.value = '';
+    geocodeAndAdd('dest', destAddrInput.value, destAddrInput, destAddrHint, destAddrGo, destSearchResults);
   }
   originAddrGo.addEventListener('click', submitOriginAddr);
   destAddrGo.addEventListener('click', submitDestAddr);
   originAddrInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitOriginAddr(); });
   destAddrInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitDestAddr(); });
+  originAddrInput.addEventListener('input', () => { originSearchResults.innerHTML = ''; });
+  destAddrInput.addEventListener('input', () => { destSearchResults.innerHTML = ''; });
 
   function removePoint(id, listName) {
     const list = listName === 'origin' ? origins : destinations;
