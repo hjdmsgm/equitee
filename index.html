@@ -199,6 +199,7 @@
   .drawer.open { width: 380px; border-left-width: 1px; }
 
   .drawer-handle {
+    display: none;
     position: fixed;
     top: 50%;
     right: 0;
@@ -345,6 +346,21 @@
     padding: 2px 7px;
   }
 
+  .drawer-close-mobile {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 7px 12px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+  }
+
   @media (max-width: 860px) {
     .panel { width: calc(100vw - 36px); max-height: 46vh; }
 
@@ -362,24 +378,25 @@
 
     .drawer-head, .sort-group, .result-list { width: 100% !important; }
 
-    .drawer-handle { display: none; }
+    .drawer-handle {
+      top: auto;
+      right: auto;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      writing-mode: horizontal-tb;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 22px;
+      border-radius: 999px;
+      box-shadow: 0 4px 16px rgba(20,35,26,0.35);
+      transition: none;
+    }
+    .drawer-handle .count { display: inline; margin-bottom: 0; }
+    .drawer-handle.shifted { right: auto; }
 
     .drawer-close-mobile { display: flex; }
-  }
-
-  .drawer-close-mobile {
-    display: none;
-    align-items: center;
-    gap: 6px;
-    border: none;
-    background: var(--ink);
-    color: var(--paper);
-    font-size: 11.5px;
-    font-weight: 600;
-    padding: 7px 12px;
-    margin-bottom: 14px;
-    cursor: pointer;
-    font-family: 'Pretendard', sans-serif;
   }
 </style>
 </head>
@@ -503,7 +520,6 @@
   let destinations = [];
   let addMode = null;
   let counter = 0;
-  let drawerManuallyClosed = false;
 
   const originChipsEl = document.getElementById('originChips');
   const destChipsEl = document.getElementById('destChips');
@@ -536,9 +552,24 @@
   addOriginBtn.addEventListener('click', () => setAddMode(addMode === 'origin' ? null : 'origin'));
   addDestBtn.addEventListener('click', () => setAddMode(addMode === 'dest' ? null : 'dest'));
 
+  function isMobile() {
+    return window.matchMedia('(max-width: 860px)').matches;
+  }
+
+  function hasAnyPoints() {
+    return origins.length > 0 || destinations.length > 0;
+  }
+
+  function updateHandleVisibility() {
+    if (!isMobile()) { drawerHandle.style.removeProperty('display'); return; }
+    const isOpen = drawer.classList.contains('open');
+    drawerHandle.style.display = (hasAnyPoints() && !isOpen) ? 'flex' : 'none';
+  }
+
   function setDrawerOpen(open) {
     drawer.classList.toggle('open', open);
     drawerHandle.classList.toggle('shifted', open);
+    updateHandleVisibility();
     let steps = 0;
     const iv = setInterval(() => {
       map.relayout();
@@ -547,15 +578,13 @@
     }, 32);
   }
 
-  drawerHandle.addEventListener('click', () => {
-    const willOpen = !drawer.classList.contains('open');
-    drawerManuallyClosed = !willOpen;
-    setDrawerOpen(willOpen);
-  });
+  drawerHandle.addEventListener('click', () => setDrawerOpen(true));
 
-  document.getElementById('drawerCloseMobile').addEventListener('click', () => {
-    drawerManuallyClosed = true;
-    setDrawerOpen(false);
+  document.getElementById('drawerCloseMobile').addEventListener('click', () => setDrawerOpen(false));
+
+  window.addEventListener('resize', () => {
+    if (!isMobile()) setDrawerOpen(true);
+    else updateHandleVisibility();
   });
 
   function markerImage(color) {
@@ -696,8 +725,8 @@
     const readyCount = (origins.length > 0 && destinations.length > 0) ? destinations.length : 0;
     drawerCount.textContent = readyCount;
 
-    if (readyCount > 0 && !drawerManuallyClosed) setDrawerOpen(true);
-    if (readyCount === 0) setDrawerOpen(false);
+    if (!isMobile()) setDrawerOpen(true);
+    else updateHandleVisibility();
 
     if (origins.length === 0 || destinations.length === 0) {
       resultSub.textContent = '직선거리(km) 기준';
