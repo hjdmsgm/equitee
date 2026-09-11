@@ -11,6 +11,7 @@ let destinations = [];
 let addMode = null;
 let counter = 0;
 let activePopupOverlay = null;
+let midpointOverlay = null;
 
 const originChipsEl = document.getElementById('originChips');
 const destChipsEl = document.getElementById('destChips');
@@ -71,6 +72,38 @@ function markerImage(color) {
     + `<rect x="3" y="3" width="14" height="14" fill="${color}" stroke="#F4F2E9" stroke-width="2" transform="rotate(45 10 10)"/></svg>`;
   const url = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
   return new kakao.maps.MarkerImage(url, new kakao.maps.Size(20, 20), { offset: new kakao.maps.Point(10, 10) });
+}
+
+function updateMidpointMarker() {
+  if (midpointOverlay) { midpointOverlay.setMap(null); midpointOverlay = null; }
+  if (origins.length < 2) return;
+
+  const avgLat = origins.reduce((sum, o) => sum + o.lat, 0) / origins.length;
+  const avgLng = origins.reduce((sum, o) => sum + o.lng, 0) / origins.length;
+
+  const el = document.createElement('div');
+  el.title = '다 같이 모이기 딱 좋은 어중간한 지점';
+  el.style.cssText = 'display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#F4F2E9; border:2px solid #14231A; border-radius:50%; box-shadow:0 3px 8px rgba(20,35,26,0.35);';
+  el.innerHTML = `<svg width="16" height="16" viewBox="0 0 60 60" aria-hidden="true">
+    <line x1="12" y1="20" x2="30" y2="34" stroke="#1E7A46" stroke-width="3" stroke-dasharray="4 4"/>
+    <line x1="48" y1="20" x2="30" y2="34" stroke="#1476A6" stroke-width="3" stroke-dasharray="4 4"/>
+    <line x1="30" y1="54" x2="30" y2="34" stroke="#F0940D" stroke-width="3" stroke-dasharray="4 4"/>
+    <circle cx="12" cy="20" r="5" fill="#1E7A46"/>
+    <circle cx="48" cy="20" r="5" fill="#1476A6"/>
+    <circle cx="30" cy="54" r="5" fill="#F0940D"/>
+    <line x1="30" y1="34" x2="30" y2="10" stroke="#F4F2E9" stroke-width="4" stroke-linecap="round"/>
+    <path d="M30 10 L44 16 L30 22 Z" fill="#F0940D"/>
+    <circle cx="30" cy="34" r="4" fill="#F4F2E9"/>
+  </svg>`;
+
+  midpointOverlay = new kakao.maps.CustomOverlay({
+    position: new kakao.maps.LatLng(avgLat, avgLng),
+    content: el,
+    xAnchor: 0.5,
+    yAnchor: 0.5,
+    zIndex: 200
+  });
+  midpointOverlay.setMap(map);
 }
 
 function addPoint(kind, name, lat, lng, fly) {
@@ -346,6 +379,7 @@ drawer.addEventListener('transitionend', (e) => {
 });
 
 function renderResults() {
+  updateMidpointMarker();
   panelFooterCounts.textContent = `출발 ${origins.length} · 목적지 ${destinations.length}`;
   panelFooterCta.textContent = (origins.length === 0 || destinations.length === 0)
     ? '출발지, 목적지를 선택해주세요'

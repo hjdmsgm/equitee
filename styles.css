@@ -59,6 +59,24 @@ body {
 .panel-head h1 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
 .panel-head .tag { font-size: 10px; color: rgba(244,242,233,0.6); }
 
+/* ---------- Wordmark badge, straddling the panel/map boundary on purpose ---------- */
+.panel-badge {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  transform: translate(-50%, -50%);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 0 3px 10px rgba(20,35,26,0.35);
+  z-index: 550;
+}
+
 /* ---------- Left input panel ---------- */
 .panel {
   position: absolute;
