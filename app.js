@@ -12,6 +12,7 @@ let addMode = null;
 let counter = 0;
 let activePopupOverlay = null;
 let midpointOverlay = null;
+let connectionLines = [];
 
 const originChipsEl = document.getElementById('originChips');
 const destChipsEl = document.getElementById('destChips');
@@ -67,11 +68,23 @@ panelFooter.addEventListener('click', () => setDrawerOpen(true));
 
 document.getElementById('drawerCloseMobile').addEventListener('click', () => setDrawerOpen(false));
 
-function markerImage(color) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">`
-    + `<rect x="3" y="3" width="14" height="14" fill="${color}" stroke="#F4F2E9" stroke-width="2" transform="rotate(45 10 10)"/></svg>`;
+function svgToMarkerImage(svg, width, height, offsetX, offsetY) {
   const url = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
-  return new kakao.maps.MarkerImage(url, new kakao.maps.Size(20, 20), { offset: new kakao.maps.Point(10, 10) });
+  return new kakao.maps.MarkerImage(url, new kakao.maps.Size(width, height), { offset: new kakao.maps.Point(offsetX, offsetY) });
+}
+
+function originMarkerImage() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18">`
+    + `<circle cx="9" cy="9" r="7" fill="#1476A6" stroke="#F4F2E9" stroke-width="2.5"/></svg>`;
+  return svgToMarkerImage(svg, 18, 18, 9, 9);
+}
+
+function destMarkerImage(rank) {
+  const label = rank ? String(rank) : '';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="34">`
+    + `<path d="M14 0C6.3 0 0 6.3 0 14c0 10 14 20 14 20s14-10 14-20C28 6.3 21.7 0 14 0z" fill="#1E7A46" stroke="#F4F2E9" stroke-width="2"/>`
+    + `<text x="14" y="19" text-anchor="middle" font-size="13" font-weight="700" fill="#F4F2E9" font-family="'IBM Plex Mono',monospace">${label}</text></svg>`;
+  return svgToMarkerImage(svg, 28, 34, 14, 34);
 }
 
 function updateMidpointMarker() {
@@ -106,13 +119,32 @@ function updateMidpointMarker() {
   midpointOverlay.setMap(map);
 }
 
+function clearConnections() {
+  connectionLines.forEach(line => line.setMap(null));
+  connectionLines = [];
+}
+
+function showConnections(dest) {
+  clearConnections();
+  origins.forEach(o => {
+    const line = new kakao.maps.Polyline({
+      path: [new kakao.maps.LatLng(o.lat, o.lng), new kakao.maps.LatLng(dest.lat, dest.lng)],
+      strokeWeight: 3,
+      strokeColor: '#F0940D',
+      strokeOpacity: 0.85,
+      strokeStyle: 'shortdash'
+    });
+    line.setMap(map);
+    connectionLines.push(line);
+  });
+}
+
 function addPoint(kind, name, lat, lng, fly) {
   const id = 'p' + (counter++);
-  const color = kind === 'origin' ? '#1476A6' : '#1E7A46';
   const latlng = new kakao.maps.LatLng(lat, lng);
   const marker = new kakao.maps.Marker({
     position: latlng,
-    image: markerImage(color),
+    image: kind === 'origin' ? originMarkerImage() : destMarkerImage(destinations.length + 1),
     map
   });
   const infowindow = new kakao.maps.InfoWindow({ content: `<div style="padding:4px 8px;font-size:12px;">${escapeHtml(name)}</div>` });
@@ -197,6 +229,7 @@ function openMapPopup(kind, latlng) {
 kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
   originSearchResults.innerHTML = '';
   destSearchResults.innerHTML = '';
+  clearConnections();
   if (!addMode) return;
   openMapPopup(addMode, mouseEvent.latLng);
 });
@@ -411,10 +444,13 @@ function renderResults() {
   const metricLabel = sortKey === 'fair' ? '편차' : sortKey === 'avg' ? '평균' : '최대';
   resultSub.textContent = `골프장 ${destinations.length} · 출발지 ${origins.length} · 직선거리(km)`;
 
+  sorted.forEach((row, i) => row.dest.marker.setImage(destMarkerImage(i + 1)));
+  clearConnections();
+
   resultArea.innerHTML = sorted.map((row, i) => {
     const metricVal = sortKey === 'fair' ? row.spread : sortKey === 'avg' ? row.avg : row.max;
     const distSpans = row.dists.map(d => `<span>${escapeHtml(d.name)} <b>${d.km.toFixed(1)}km</b></span>`).join('');
-    return `<div class="result-card">
+    return `<div class="result-card" data-dest-id="${row.dest.id}">
       <div class="result-rank mono">${i+1}</div>
       <div class="result-body">
         <div class="result-name">${escapeHtml(row.dest.name)}</div>
@@ -423,6 +459,14 @@ function renderResults() {
       </div>
     </div>`;
   }).join('');
+
+  resultArea.querySelectorAll('.result-card').forEach(card => {
+    const dest = destinations.find(d => d.id === card.dataset.destId);
+    if (!dest) return;
+    card.addEventListener('mouseenter', () => showConnections(dest));
+    card.addEventListener('mouseleave', clearConnections);
+    card.addEventListener('click', () => showConnections(dest));
+  });
 }
 
 renderChips();

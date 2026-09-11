@@ -363,6 +363,7 @@ body {
   border-bottom: 1px solid var(--line);
   display: flex;
   gap: 12px;
+  cursor: pointer;
 }
 .result-card:hover { background: rgba(51,81,60,0.045); }
 
