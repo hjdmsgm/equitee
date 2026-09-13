@@ -301,7 +301,7 @@ function handleSearchResultsKeydown(e, resultsEl) {
 }
 
 function isGolfCourse(place) {
-  return (place.category_name || '').includes('골프');
+  return (place.category_name || '').includes('스포츠,레저 > 골프 > 골프장');
 }
 
 function geocodeAndAdd(kind, query, inputEl, hintEl, goBtn, resultsEl) {
