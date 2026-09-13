@@ -155,6 +155,20 @@ body {
 .add-btn:hover { background: rgba(51,81,60,0.07); border-color: var(--moss); }
 .add-btn.active { background: var(--moss); border-style: solid; border-color: var(--moss); color: var(--paper); }
 
+.recommend-btn {
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--flag);
+  background: rgba(240,148,13,0.1);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+.recommend-btn:hover { background: rgba(240,148,13,0.2); }
+
 .hint { font-size: 10px; color: var(--muted); margin: 6px 0 0; line-height: 1.5; min-height: 14px; }
 
 .addr-search { position: relative; }

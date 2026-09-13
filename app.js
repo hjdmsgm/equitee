@@ -87,12 +87,18 @@ function destMarkerImage(rank) {
   return svgToMarkerImage(svg, 28, 34, 14, 34);
 }
 
+function getMidpoint() {
+  if (origins.length < 2) return null;
+  const lat = origins.reduce((sum, o) => sum + o.lat, 0) / origins.length;
+  const lng = origins.reduce((sum, o) => sum + o.lng, 0) / origins.length;
+  return { lat, lng };
+}
+
 function updateMidpointMarker() {
   if (midpointOverlay) { midpointOverlay.setMap(null); midpointOverlay = null; }
-  if (origins.length < 2) return;
-
-  const avgLat = origins.reduce((sum, o) => sum + o.lat, 0) / origins.length;
-  const avgLng = origins.reduce((sum, o) => sum + o.lng, 0) / origins.length;
+  const mid = getMidpoint();
+  if (!mid) return;
+  const { lat: avgLat, lng: avgLng } = mid;
 
   const el = document.createElement('div');
   el.title = '다 같이 모이기 딱 좋은 어중간한 지점';
@@ -359,6 +365,31 @@ destAddrInput.addEventListener('input', () => {
   clearTimeout(destSearchTimer);
   if (!destAddrInput.value.trim()) { destAddrHint.textContent = ''; return; }
   destSearchTimer = setTimeout(submitDestAddr, 350);
+});
+
+const recommendDestBtn = document.getElementById('recommendDestBtn');
+recommendDestBtn.addEventListener('click', () => {
+  const mid = getMidpoint();
+  if (!mid) {
+    destAddrHint.textContent = '출발지를 2곳 이상 등록하면 어중간한 지점 근처 골프장을 추천해드려요.';
+    destSearchResults.innerHTML = '';
+    return;
+  }
+  destAddrHint.textContent = '어중간한 지점 근처 골프장을 찾는 중...';
+  destSearchResults.innerHTML = '';
+  places.keywordSearch('골프장', (data, status) => {
+    const golfCourses = (status === kakao.maps.services.Status.OK && data) ? data.filter(isGolfCourse) : [];
+    if (golfCourses.length === 0) {
+      destAddrHint.textContent = '근처에서 골프장을 찾지 못했습니다.';
+      return;
+    }
+    destAddrHint.textContent = '어중간한 지점 근처 골프장 ' + golfCourses.length + '개를 찾았어요.';
+    renderSearchResults('dest', destSearchResults, destAddrInput, destAddrHint, golfCourses.slice(0, 8));
+  }, {
+    location: new kakao.maps.LatLng(mid.lat, mid.lng),
+    radius: 20000,
+    sort: kakao.maps.services.SortBy.DISTANCE
+  });
 });
 
 function removePoint(id, listName) {
