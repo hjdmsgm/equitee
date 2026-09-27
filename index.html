@@ -13,21 +13,55 @@
 </head>
 <body>
 
+<svg style="position:absolute; width:0; height:0; overflow:hidden;" aria-hidden="true">
+  <defs>
+    <!-- Icons from Lucide (ISC license): https://lucide.dev -->
+    <symbol id="icon-scale" viewBox="0 0 24 24">
+      <path d="M12 3v18"/>
+      <path d="m19 8 3 8a5 5 0 0 1-6 0zV7"/>
+      <path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"/>
+      <path d="m5 8 3 8a5 5 0 0 1-6 0zV7"/>
+      <path d="M7 21h10"/>
+    </symbol>
+    <symbol id="icon-target" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10"/>
+      <circle cx="12" cy="12" r="6"/>
+      <circle cx="12" cy="12" r="2"/>
+    </symbol>
+    <symbol id="icon-shield" viewBox="0 0 24 24">
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+    </symbol>
+    <symbol id="icon-sparkles" viewBox="0 0 24 24">
+      <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+      <path d="M20 2v4"/>
+      <path d="M22 4h-4"/>
+      <circle cx="4" cy="20" r="2"/>
+    </symbol>
+    <symbol id="icon-chevron-down" viewBox="0 0 24 24">
+      <path d="m6 9 6 6 6-6"/>
+    </symbol>
+    <symbol id="icon-x" viewBox="0 0 24 24">
+      <path d="M18 6 6 18"/>
+      <path d="m6 6 12 12"/>
+    </symbol>
+  </defs>
+</svg>
+
 <div class="app">
   <div class="map-col">
     <div id="map"></div>
 
     <div class="panel-badge" aria-hidden="true" title="어중간">
       <svg width="22" height="22" viewBox="0 0 60 60" aria-hidden="true">
-        <line x1="12" y1="20" x2="30" y2="34" stroke="#1E7A46" stroke-width="2.5" stroke-dasharray="3 3"/>
-        <line x1="48" y1="20" x2="30" y2="34" stroke="#1476A6" stroke-width="2.5" stroke-dasharray="3 3"/>
-        <line x1="30" y1="54" x2="30" y2="34" stroke="#F0940D" stroke-width="2.5" stroke-dasharray="3 3"/>
-        <circle cx="12" cy="20" r="4.5" fill="#1E7A46"/>
-        <circle cx="48" cy="20" r="4.5" fill="#1476A6"/>
-        <circle cx="30" cy="54" r="4.5" fill="#F0940D"/>
-        <line x1="30" y1="34" x2="30" y2="10" stroke="#F4F2E9" stroke-width="3.5" stroke-linecap="round"/>
-        <path d="M30 10 L44 16 L30 22 Z" fill="#F0940D"/>
-        <circle cx="30" cy="34" r="4" fill="#F4F2E9"/>
+        <line x1="12" y1="20" x2="30" y2="34" stroke="#F23D63" stroke-width="2" stroke-dasharray="3 3"/>
+        <line x1="48" y1="20" x2="30" y2="34" stroke="#3654F4" stroke-width="2" stroke-dasharray="3 3"/>
+        <line x1="30" y1="54" x2="30" y2="34" stroke="#F2A900" stroke-width="2" stroke-dasharray="3 3"/>
+        <circle cx="12" cy="20" r="4.5" fill="#F23D63"/>
+        <circle cx="48" cy="20" r="4.5" fill="#3654F4"/>
+        <circle cx="30" cy="54" r="4.5" fill="#F2A900"/>
+        <line x1="30" y1="34" x2="30" y2="10" stroke="#12151B" stroke-width="3" stroke-linecap="round"/>
+        <path d="M30 10 L44 16 L30 22 Z" fill="#F2A900"/>
+        <circle cx="30" cy="34" r="4" fill="#FFFFFF"/>
       </svg>
     </div>
 
@@ -62,7 +96,7 @@
           <div class="search-results" id="destSearchResults"></div>
         </div>
         <button class="add-btn" id="addDestBtn">+ 지도 클릭으로 추가</button>
-        <button class="recommend-btn" id="recommendDestBtn">✨ 어중간한 지점 근처 골프장 추천받기</button>
+        <button class="recommend-btn" id="recommendDestBtn"><svg class="icon"><use href="#icon-sparkles"/></svg><span>어중간한 지점 근처 골프장 추천받기</span></button>
         <p class="hint" id="destAddrHint"></p>
       </div>
 
@@ -80,13 +114,13 @@
       <button class="drawer-close-mobile" id="drawerCloseMobile">← 지도로</button>
       <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px;">
         <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px;">
-          <h2 class="kr-head" style="margin:0;font-size:14px;font-weight:600;">결과</h2>
+          <h2 class="kr-head" style="margin:0;font-size:17px;font-weight:700;white-space:nowrap;">결과</h2>
           <span class="meta mono" id="resultSub">직선거리(km) 기준</span>
         </div>
         <svg width="84" height="30" viewBox="0 0 200 70" aria-hidden="true" style="flex:none;">
-          <line x1="100" y1="12" x2="100" y2="28" stroke="#14231A" stroke-width="2" stroke-linecap="round"/>
-          <path d="M100 12 L114 18 L100 24 Z" fill="#F0940D"/>
-          <text x="100" y="58" text-anchor="middle" style="font-size:34px;font-weight:700;fill:#14231A;letter-spacing:1.5px;font-family:'Pretendard',sans-serif;">어중간</text>
+          <line x1="100" y1="12" x2="100" y2="28" stroke="#12151B" stroke-width="2" stroke-linecap="round"/>
+          <path d="M100 12 L114 18 L100 24 Z" fill="#F2A900"/>
+          <text x="100" y="58" text-anchor="middle" style="font-size:34px;font-weight:700;fill:#12151B;letter-spacing:1.5px;font-family:'Pretendard',sans-serif;">어중간</text>
         </svg>
       </div>
     </div>
@@ -94,27 +128,27 @@
     <div class="sort-group" id="sortGroup">
       <div class="sort-pills" id="sortPills">
         <button class="sort-pill active kr-head" data-value="fair">
-          <span class="sort-pill-icon">⚖️</span>
+          <span class="sort-pill-icon"><svg class="icon"><use href="#icon-scale"/></svg></span>
           <span class="sort-pill-label">공평함 우선</span>
         </button>
         <button class="sort-pill kr-head" data-value="avg">
-          <span class="sort-pill-icon">🎯</span>
+          <span class="sort-pill-icon"><svg class="icon"><use href="#icon-target"/></svg></span>
           <span class="sort-pill-label">총 이동거리</span>
         </button>
         <button class="sort-pill kr-head" data-value="worst">
-          <span class="sort-pill-icon">🛡️</span>
+          <span class="sort-pill-icon"><svg class="icon"><use href="#icon-shield"/></svg></span>
           <span class="sort-pill-label">최악거리 최소화</span>
         </button>
       </div>
 
       <button class="sort-why-toggle kr-head" id="sortWhyToggle" aria-expanded="false">
-        왜 이 기준이죠? <span class="sort-why-chev">▾</span>
+        왜 이 기준이죠? <span class="sort-why-chev"><svg class="icon" style="width:11px;height:11px;"><use href="#icon-chevron-down"/></svg></span>
       </button>
 
       <div class="sort-detail-wrap" id="sortDetailWrap" hidden>
         <div class="sort-detail kr-head active" data-value="fair">
           <div class="sort-detail-top">
-            <span class="sort-detail-icon">⚖️</span>
+            <span class="sort-detail-icon"><svg class="icon"><use href="#icon-scale"/></svg></span>
             <span class="sort-detail-title">다 같이 억울하지 않게</span>
           </div>
           <div class="sort-detail-desc">제일 가까운 사람과 제일 먼 사람의 거리 차이(편차)가 작은 곳부터 보여줘요. "왜 나만 멀리 가야 해?"를 막아주는 기준.</div>
@@ -122,7 +156,7 @@
         </div>
         <div class="sort-detail kr-head" data-value="avg">
           <div class="sort-detail-top">
-            <span class="sort-detail-icon">🎯</span>
+            <span class="sort-detail-icon"><svg class="icon"><use href="#icon-target"/></svg></span>
             <span class="sort-detail-title">총 이동거리 최소화</span>
           </div>
           <div class="sort-detail-desc">모든 출발지로부터의 평균 거리가 가장 짧은 곳부터 보여줘요. 다만 한 명만 유독 멀어도 평균만 낮으면 상위권일 수 있어요.</div>
@@ -130,7 +164,7 @@
         </div>
         <div class="sort-detail kr-head" data-value="worst">
           <div class="sort-detail-top">
-            <span class="sort-detail-icon">🛡️</span>
+            <span class="sort-detail-icon"><svg class="icon"><use href="#icon-shield"/></svg></span>
             <span class="sort-detail-title">제일 고생하는 사람 기준</span>
           </div>
           <div class="sort-detail-desc">가장 멀리서 와야 하는 사람의 거리 자체를 최소화해요. "그래도 아무도 너무 고생하지는 않게"가 목표.</div>

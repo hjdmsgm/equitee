@@ -6,6 +6,21 @@ map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
 const geocoder = new kakao.maps.services.Geocoder();
 const places = new kakao.maps.services.Places();
 
+// The drawer's width transition (see styles.css) is what actually resizes the map
+// column via flexbox — it's load-bearing layout, not decorative motion. Rather than
+// guess at the animation's timing with a poll loop, react to the map column's real
+// size changes directly, so relayout only runs when the map's box has actually moved.
+const mapColEl = document.querySelector('.map-col');
+let relayoutFrame = null;
+const mapResizeObserver = new ResizeObserver(() => {
+  if (relayoutFrame) return;
+  relayoutFrame = requestAnimationFrame(() => {
+    relayoutFrame = null;
+    map.relayout();
+  });
+});
+mapResizeObserver.observe(mapColEl);
+
 let origins = [];
 let destinations = [];
 let addMode = null;
@@ -56,12 +71,6 @@ addDestBtn.addEventListener('click', () => setAddMode(addMode === 'dest' ? null 
 
 function setDrawerOpen(open) {
   drawer.classList.toggle('open', open);
-  let steps = 0;
-  const iv = setInterval(() => {
-    map.relayout();
-    steps++;
-    if (steps > 10) clearInterval(iv);
-  }, 32);
 }
 
 panelFooter.addEventListener('click', () => setDrawerOpen(true));
@@ -75,15 +84,15 @@ function svgToMarkerImage(svg, width, height, offsetX, offsetY) {
 
 function originMarkerImage() {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18">`
-    + `<circle cx="9" cy="9" r="7" fill="#1476A6" stroke="#F4F2E9" stroke-width="2.5"/></svg>`;
+    + `<circle cx="9" cy="9" r="7" fill="#3654F4" stroke="#FFFFFF" stroke-width="2.5"/></svg>`;
   return svgToMarkerImage(svg, 18, 18, 9, 9);
 }
 
 function destMarkerImage(rank) {
   const label = rank ? String(rank) : '';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="34">`
-    + `<path d="M14 0C6.3 0 0 6.3 0 14c0 10 14 20 14 20s14-10 14-20C28 6.3 21.7 0 14 0z" fill="#1E7A46" stroke="#F4F2E9" stroke-width="2"/>`
-    + `<text x="14" y="19" text-anchor="middle" font-size="13" font-weight="700" fill="#F4F2E9" font-family="'IBM Plex Mono',monospace">${label}</text></svg>`;
+    + `<path d="M14 0C6.3 0 0 6.3 0 14c0 10 14 20 14 20s14-10 14-20C28 6.3 21.7 0 14 0z" fill="#F23D63" stroke="#FFFFFF" stroke-width="2"/>`
+    + `<text x="14" y="19" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF" font-family="'Pretendard',sans-serif">${label}</text></svg>`;
   return svgToMarkerImage(svg, 28, 34, 14, 34);
 }
 
@@ -102,17 +111,17 @@ function updateMidpointMarker() {
 
   const el = document.createElement('div');
   el.title = '다 같이 모이기 딱 좋은 어중간한 지점';
-  el.style.cssText = 'display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#F4F2E9; border:2px solid #14231A; border-radius:50%; box-shadow:0 3px 8px rgba(20,35,26,0.35);';
+  el.style.cssText = 'display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#FFFFFF; border:2px solid #12151B; border-radius:50%; box-shadow:0 3px 8px rgba(18,21,27,0.35);';
   el.innerHTML = `<svg width="16" height="16" viewBox="0 0 60 60" aria-hidden="true">
-    <line x1="12" y1="20" x2="30" y2="34" stroke="#1E7A46" stroke-width="3" stroke-dasharray="4 4"/>
-    <line x1="48" y1="20" x2="30" y2="34" stroke="#1476A6" stroke-width="3" stroke-dasharray="4 4"/>
-    <line x1="30" y1="54" x2="30" y2="34" stroke="#F0940D" stroke-width="3" stroke-dasharray="4 4"/>
-    <circle cx="12" cy="20" r="5" fill="#1E7A46"/>
-    <circle cx="48" cy="20" r="5" fill="#1476A6"/>
-    <circle cx="30" cy="54" r="5" fill="#F0940D"/>
-    <line x1="30" y1="34" x2="30" y2="10" stroke="#F4F2E9" stroke-width="4" stroke-linecap="round"/>
-    <path d="M30 10 L44 16 L30 22 Z" fill="#F0940D"/>
-    <circle cx="30" cy="34" r="4" fill="#F4F2E9"/>
+    <line x1="12" y1="20" x2="30" y2="34" stroke="#F23D63" stroke-width="3" stroke-dasharray="4 4"/>
+    <line x1="48" y1="20" x2="30" y2="34" stroke="#3654F4" stroke-width="3" stroke-dasharray="4 4"/>
+    <line x1="30" y1="54" x2="30" y2="34" stroke="#F2A900" stroke-width="3" stroke-dasharray="4 4"/>
+    <circle cx="12" cy="20" r="5" fill="#F23D63"/>
+    <circle cx="48" cy="20" r="5" fill="#3654F4"/>
+    <circle cx="30" cy="54" r="5" fill="#F2A900"/>
+    <line x1="30" y1="34" x2="30" y2="10" stroke="#12151B" stroke-width="4" stroke-linecap="round"/>
+    <path d="M30 10 L44 16 L30 22 Z" fill="#F2A900"/>
+    <circle cx="30" cy="34" r="4" fill="#FFFFFF"/>
   </svg>`;
 
   midpointOverlay = new kakao.maps.CustomOverlay({
@@ -136,8 +145,8 @@ function showConnections(dest) {
     const line = new kakao.maps.Polyline({
       path: [new kakao.maps.LatLng(o.lat, o.lng), new kakao.maps.LatLng(dest.lat, dest.lng)],
       strokeWeight: 3,
-      strokeColor: '#F0940D',
-      strokeOpacity: 0.85,
+      strokeColor: '#F2A900',
+      strokeOpacity: 0.9,
       strokeStyle: 'shortdash'
     });
     line.setMap(map);
@@ -153,7 +162,7 @@ function addPoint(kind, name, lat, lng, fly) {
     image: kind === 'origin' ? originMarkerImage() : destMarkerImage(destinations.length + 1),
     map
   });
-  const infowindow = new kakao.maps.InfoWindow({ content: `<div style="padding:4px 8px;font-size:12px;">${escapeHtml(name)}</div>` });
+  const infowindow = new kakao.maps.InfoWindow({ content: `<div style="padding:5px 9px;font-size:13px;">${escapeHtml(name)}</div>` });
   kakao.maps.event.addListener(marker, 'click', () => infowindow.open(map, marker));
   const point = { id, name, lat, lng, marker };
   if (kind === 'origin') origins.push(point); else destinations.push(point);
@@ -173,26 +182,26 @@ function openMapPopup(kind, latlng) {
   const loadingText = '주소 확인 중...';
 
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'box-sizing:border-box; position:relative; width:200px; padding:10px; background:#F4F2E9; border:1px solid rgba(20,35,26,0.32); box-shadow:0 4px 14px rgba(20,35,26,0.25); font-family:Pretendard,sans-serif;';
+  wrap.style.cssText = 'box-sizing:border-box; position:relative; width:224px; padding:12px; background:#FFFFFF; border:1px solid rgba(18,21,27,0.24); box-shadow:0 6px 20px rgba(18,21,27,0.22); font-family:Pretendard,sans-serif;';
   wrap.addEventListener('click', (e) => e.stopPropagation());
 
   const closeBtn = document.createElement('button');
-  closeBtn.textContent = '×';
+  closeBtn.innerHTML = '<svg class="icon"><use href="#icon-x"/></svg>';
   closeBtn.setAttribute('aria-label', '닫기');
-  closeBtn.style.cssText = 'box-sizing:border-box; position:absolute; top:4px; right:6px; border:none; background:none; cursor:pointer; color:#5C6459; font-size:15px; line-height:1; padding:2px;';
+  closeBtn.style.cssText = 'box-sizing:border-box; position:absolute; top:0; right:0; width:26px; height:26px; display:flex; align-items:center; justify-content:center; border:none; background:none; cursor:pointer; color:#4B5563;';
 
   const labelEl = document.createElement('div');
   labelEl.textContent = label;
-  labelEl.style.cssText = 'box-sizing:border-box; font-size:11px; font-weight:600; color:#14231A; margin:0 18px 6px 0;';
+  labelEl.style.cssText = 'box-sizing:border-box; font-size:13px; font-weight:600; color:#12151B; margin:0 18px 7px 0;';
 
   const input = document.createElement('input');
   input.type = 'text';
   input.value = loadingText;
-  input.style.cssText = 'box-sizing:border-box; display:block; width:100%; padding:6px 8px; border:1px solid rgba(20,35,26,0.32); background:#fff; font-size:12px; margin-bottom:6px; font-family:inherit;';
+  input.style.cssText = 'box-sizing:border-box; display:block; width:100%; padding:7px 9px; border:1px solid rgba(18,21,27,0.24); background:#fff; font-size:13.5px; margin-bottom:7px; font-family:inherit;';
 
   const confirmBtn = document.createElement('button');
   confirmBtn.textContent = '이 위치에 추가';
-  confirmBtn.style.cssText = 'box-sizing:border-box; display:block; width:100%; padding:6px 8px; border:1px solid #14231A; background:#14231A; color:#F4F2E9; font-size:11.5px; font-weight:600; cursor:pointer;';
+  confirmBtn.style.cssText = 'box-sizing:border-box; display:block; width:100%; padding:7px 8px; border:1px solid #12151B; background:#12151B; color:#FFFFFF; font-size:13px; font-weight:600; cursor:pointer;';
 
   wrap.append(closeBtn, labelEl, input, confirmBtn);
 
@@ -240,8 +249,39 @@ kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
   openMapPopup(addMode, mouseEvent.latLng);
 });
 
+// .search-results is visually anchored under its input, but the input sits inside
+// .panel, which scrolls (overflow-y:auto) and can crop a position:absolute dropdown.
+// Positioning it as position:fixed from the input's real screen coordinates lets it
+// escape that clipping instead of being cut off at the panel's edge.
+function positionSearchResults(resultsEl, inputEl) {
+  const wrap = inputEl.closest('.addr-search');
+  const r = wrap.getBoundingClientRect();
+  resultsEl.style.position = 'fixed';
+  resultsEl.style.left = r.left + 'px';
+  resultsEl.style.top = (r.bottom + 5) + 'px';
+  resultsEl.style.width = r.width + 'px';
+  resultsEl.style.right = 'auto';
+  resultsEl.style.marginTop = '0';
+}
+
+// Move the dropdowns to be direct children of <body>. .panel uses backdrop-filter,
+// which (like transform/filter) makes it the containing block for any descendant
+// using position:fixed — that would silently pull the "fixed" coordinates back into
+// the panel's own scrolling box and reintroduce the clipping this is meant to fix.
+document.body.appendChild(document.getElementById('originSearchResults'));
+document.body.appendChild(document.getElementById('destSearchResults'));
+
+function repositionOpenSearchResults() {
+  [[originSearchResults, originAddrInput], [destSearchResults, destAddrInput]].forEach(([resultsEl, inputEl]) => {
+    if (resultsEl.childElementCount > 0) positionSearchResults(resultsEl, inputEl);
+  });
+}
+window.addEventListener('resize', repositionOpenSearchResults);
+document.querySelector('.panel').addEventListener('scroll', repositionOpenSearchResults);
+
 function renderSearchResults(kind, resultsEl, inputEl, hintEl, results) {
   resultsEl._selIndex = -1;
+  positionSearchResults(resultsEl, inputEl);
   const itemsHtml = results.map((r, i) => `
     <div class="search-result-item" data-idx="${i}">
       <div class="search-result-name">${escapeHtml(r.place_name)}</div>
@@ -251,7 +291,7 @@ function renderSearchResults(kind, resultsEl, inputEl, hintEl, results) {
   resultsEl.innerHTML = `
     <div class="search-results-head">
       <span class="search-results-count mono">${results.length}개 결과</span>
-      <button class="search-results-close" aria-label="검색결과 닫기">×</button>
+      <button class="search-results-close" aria-label="검색결과 닫기"><svg class="icon"><use href="#icon-x"/></svg></button>
     </div>
     ${itemsHtml}
   `;
@@ -410,7 +450,7 @@ function renderChips() {
 }
 
 function chipHtml(p) {
-  return `<span class="chip">${escapeHtml(p.name)}<button data-id="${p.id}" aria-label="삭제">×</button></span>`;
+  return `<span class="chip">${escapeHtml(p.name)}<button data-id="${p.id}" aria-label="삭제"><svg class="icon"><use href="#icon-x"/></svg></button></span>`;
 }
 
 function escapeHtml(str) {
@@ -436,10 +476,6 @@ sortWhyToggle.addEventListener('click', () => {
   const expanded = sortWhyToggle.getAttribute('aria-expanded') === 'true';
   sortWhyToggle.setAttribute('aria-expanded', String(!expanded));
   sortDetailWrap.hidden = expanded;
-});
-
-drawer.addEventListener('transitionend', (e) => {
-  if (e.propertyName === 'width') map.relayout();
 });
 
 function renderResults() {
