@@ -29,6 +29,12 @@ let activePopupOverlay = null;
 let midpointOverlay = null;
 let connectionLines = [];
 
+// Kakao Mobility Navi REST key — separate from the Maps JS appkey above.
+// This is a static site with no backend, so it's shipped client-side by design;
+// restrict allowed domains for this key in the Kakao Developers console.
+const KAKAO_MOBILITY_REST_KEY = 'c3a8f28844c3d20e6dd78cd4c64a1976';
+const routeCache = new Map();
+
 const originChipsEl = document.getElementById('originChips');
 const destChipsEl = document.getElementById('destChips');
 const addOriginBtn = document.getElementById('addOriginBtn');
@@ -142,16 +148,74 @@ function clearConnections() {
 function showConnections(dest) {
   clearConnections();
   origins.forEach(o => {
+    const entry = routeCache.get(pairKey(o, dest));
+    const hasRoute = entry && entry.status === 'ok' && entry.path && entry.path.length > 1;
+    const path = hasRoute
+      ? entry.path.map(p => new kakao.maps.LatLng(p.lat, p.lng))
+      : [new kakao.maps.LatLng(o.lat, o.lng), new kakao.maps.LatLng(dest.lat, dest.lng)];
     const line = new kakao.maps.Polyline({
-      path: [new kakao.maps.LatLng(o.lat, o.lng), new kakao.maps.LatLng(dest.lat, dest.lng)],
-      strokeWeight: 3,
+      path,
+      strokeWeight: hasRoute ? 4 : 3,
       strokeColor: '#F2A900',
       strokeOpacity: 0.9,
-      strokeStyle: 'shortdash'
+      strokeStyle: hasRoute ? 'solid' : 'shortdash'
     });
     line.setMap(map);
     connectionLines.push(line);
   });
+}
+
+// Kakao Mobility Directions API: one origin ↔ one destination per call, so an
+// N origins × M destinations grid needs N*M calls. Cached per pair and fired
+// once each; a failed/pending pair falls back to the haversine estimate so the
+// result list always has a number to sort by.
+function pairKey(o, d) {
+  return o.id + '__' + d.id;
+}
+
+async function fetchDrivingRoute(origin, dest) {
+  const params = new URLSearchParams({
+    origin: `${origin.lng},${origin.lat}`,
+    destination: `${dest.lng},${dest.lat}`,
+    priority: 'RECOMMEND',
+    summary: 'false'
+  });
+  const res = await fetch(`https://apis-navi.kakaomobility.com/v1/directions?${params}`, {
+    headers: { Authorization: `KakaoAK ${KAKAO_MOBILITY_REST_KEY}` }
+  });
+  if (!res.ok) throw new Error('directions request failed: ' + res.status);
+  const data = await res.json();
+  const route = data.routes && data.routes[0];
+  if (!route || route.result_code !== 0) throw new Error((route && route.result_msg) || 'no route found');
+  const path = [];
+  route.sections.forEach(section => {
+    section.roads.forEach(road => {
+      const v = road.vertexes;
+      for (let i = 0; i < v.length; i += 2) path.push({ lat: v[i + 1], lng: v[i] });
+    });
+  });
+  return {
+    distanceKm: route.summary.distance / 1000,
+    durationMin: route.summary.duration / 60,
+    path
+  };
+}
+
+function getRoute(o, dest) {
+  const key = pairKey(o, dest);
+  const cached = routeCache.get(key);
+  if (cached) return cached;
+  const fallbackKm = haversine(o.lat, o.lng, dest.lat, dest.lng);
+  const entry = { status: 'loading', distanceKm: fallbackKm, durationMin: null, path: null };
+  routeCache.set(key, entry);
+  fetchDrivingRoute(o, dest)
+    .then(result => routeCache.set(key, { status: 'ok', ...result }))
+    .catch(err => {
+      console.warn('driving route failed, using straight-line distance instead', err);
+      routeCache.set(key, { status: 'error', distanceKm: fallbackKm, durationMin: null, path: null });
+    })
+    .then(renderResults);
+  return entry;
 }
 
 function addPoint(kind, name, lat, lng, fly) {
@@ -486,13 +550,16 @@ function renderResults() {
     : '거리계산 준비됨 →';
 
   if (origins.length === 0 || destinations.length === 0) {
-    resultSub.textContent = '직선거리(km) 기준';
+    resultSub.textContent = '실주행 거리·시간 기준 (카카오모빌리티)';
     resultArea.innerHTML = `<div class="empty-state">아직 ${origins.length === 0 ? '출발지가' : '목적지가'} 등록되지 않았습니다. 왼쪽 패널에서 위치를 추가하면 이곳에 결과가 표시됩니다.</div>`;
     return;
   }
 
   const rows = destinations.map(dest => {
-    const dists = origins.map(o => ({ name: o.name, km: haversine(o.lat, o.lng, dest.lat, dest.lng) }));
+    const dists = origins.map(o => {
+      const r = getRoute(o, dest);
+      return { name: o.name, km: r.distanceKm, durationMin: r.durationMin, approx: r.status !== 'ok' };
+    });
     const values = dists.map(d => d.km);
     const avg = values.reduce((a,b) => a+b, 0) / values.length;
     const max = Math.max(...values);
@@ -509,14 +576,17 @@ function renderResults() {
   });
 
   const metricLabel = sortKey === 'fair' ? '편차' : sortKey === 'avg' ? '평균' : '최대';
-  resultSub.textContent = `골프장 ${destinations.length} · 출발지 ${origins.length} · 직선거리(km)`;
+  resultSub.textContent = `골프장 ${destinations.length} · 출발지 ${origins.length} · 실주행 거리·시간 (카카오모빌리티)`;
 
   sorted.forEach((row, i) => row.dest.marker.setImage(destMarkerImage(i + 1)));
   clearConnections();
 
   resultArea.innerHTML = sorted.map((row, i) => {
     const metricVal = sortKey === 'fair' ? row.spread : sortKey === 'avg' ? row.avg : row.max;
-    const distSpans = row.dists.map(d => `<span>${escapeHtml(d.name)} <b>${d.km.toFixed(1)}km</b></span>`).join('');
+    const distSpans = row.dists.map(d => {
+      const timeStr = d.durationMin != null ? ` · ${Math.round(d.durationMin)}분` : '';
+      return `<span>${escapeHtml(d.name)} <b>${d.approx ? '≈' : ''}${d.km.toFixed(1)}km${timeStr}</b></span>`;
+    }).join('');
     return `<div class="result-card" data-dest-id="${row.dest.id}">
       <div class="result-rank mono">${i+1}</div>
       <div class="result-body">
