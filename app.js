@@ -156,7 +156,7 @@ function showConnections(dest) {
     const line = new kakao.maps.Polyline({
       path,
       strokeWeight: hasRoute ? 4 : 3,
-      strokeColor: '#F2A900',
+      strokeColor: '#C2185B',
       strokeOpacity: 0.9,
       strokeStyle: hasRoute ? 'solid' : 'shortdash'
     });
