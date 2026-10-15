@@ -218,6 +218,84 @@ function getRoute(o, dest) {
   return entry;
 }
 
+// Weather for the chosen round date, from Open-Meteo (free, no key). Daily forecast
+// covers ~16 days ahead; outside that window we say so instead of guessing.
+const weatherCache = new Map();
+const playDateEl = document.getElementById('playDate');
+let playDate = '';
+
+function localISO(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+const todayISO = localISO(new Date());
+const maxForecastISO = localISO(new Date(Date.now() + 15 * 86400000));
+playDateEl.min = todayISO;
+playDateEl.max = maxForecastISO;
+
+function weatherLabel(code) {
+  if (code === 0) return ['☀️', '맑음'];
+  if (code <= 2) return ['🌤️', '구름 조금'];
+  if (code === 3) return ['☁️', '흐림'];
+  if (code === 45 || code === 48) return ['🌫️', '안개'];
+  if (code >= 51 && code <= 57) return ['🌦️', '이슬비'];
+  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return ['🌧️', '비'];
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return ['❄️', '눈'];
+  if (code >= 95) return ['⛈️', '뇌우'];
+  return ['🌡️', '알 수 없음'];
+}
+
+async function fetchWeather(dest, date) {
+  const params = new URLSearchParams({
+    latitude: dest.lat, longitude: dest.lng,
+    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max',
+    timezone: 'Asia/Seoul', start_date: date, end_date: date
+  });
+  const res = await fetch('https://api.open-meteo.com/v1/forecast?' + params);
+  if (!res.ok) throw new Error('weather request failed: ' + res.status);
+  const d = (await res.json()).daily;
+  return {
+    status: 'ok',
+    code: d.weather_code[0],
+    max: d.temperature_2m_max[0],
+    min: d.temperature_2m_min[0],
+    pop: d.precipitation_probability_max[0],
+    wind: d.wind_speed_10m_max[0]
+  };
+}
+
+function getWeather(dest) {
+  if (!playDate) return null;
+  const key = dest.id + '__' + playDate;
+  const cached = weatherCache.get(key);
+  if (cached) return cached;
+  const entry = { status: 'loading' };
+  weatherCache.set(key, entry);
+  fetchWeather(dest, playDate)
+    .then(w => weatherCache.set(key, w))
+    .catch(err => {
+      console.warn('weather fetch failed', err);
+      weatherCache.set(key, { status: 'error' });
+    })
+    .then(renderResults);
+  return entry;
+}
+
+function weatherHtml(dest) {
+  if (!playDate) return `<div class="result-weather muted">라운딩 날짜를 고르면 날씨를 알려드려요</div>`;
+  if (playDate > maxForecastISO) return `<div class="result-weather muted">날씨 예보는 오늘부터 16일 이내만 볼 수 있어요</div>`;
+  const w = getWeather(dest);
+  if (w.status === 'loading') return `<div class="result-weather muted">날씨 불러오는 중...</div>`;
+  if (w.status === 'error') return `<div class="result-weather muted">날씨를 불러오지 못했어요</div>`;
+  const [icon, label] = weatherLabel(w.code);
+  const rain = w.pop != null ? ` · 강수확률 ${w.pop}%` : '';
+  return `<div class="result-weather">${icon} ${label} · ${Math.round(w.min)}°/${Math.round(w.max)}°${rain} · 바람 ${Math.round(w.wind)}km/h</div>`;
+}
+
+playDateEl.addEventListener('change', () => {
+  playDate = playDateEl.value;
+  renderResults();
+});
+
 function addPoint(kind, name, lat, lng, fly) {
   const id = 'p' + (counter++);
   const latlng = new kakao.maps.LatLng(lat, lng);
@@ -592,6 +670,7 @@ function renderResults() {
       <div class="result-body">
         <div class="result-name">${escapeHtml(row.dest.name)}</div>
         <div class="result-dists">${distSpans}</div>
+        ${weatherHtml(row.dest)}
         <span class="result-metric">${metricLabel} ${metricVal.toFixed(1)}km</span>
       </div>
     </div>`;
