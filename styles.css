@@ -512,8 +512,9 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 .result-dists b { color: var(--ink); font-weight: 600; }
 
-.date-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 600; }
-.date-input { flex: none; width: 170px; }
+.date-row { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 600; }
+.date-row span { white-space: nowrap; }
+.date-input { flex: 1; min-width: 0; }
 .result-weather { margin-bottom: 7px; font-size: 13px; color: var(--ink); }
 .result-weather.muted { color: var(--muted); }
 .result-metric {
